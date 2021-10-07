@@ -24,7 +24,7 @@ try {
 async function getFileContent() {
   const changedPaths = getPaths();
   let contentStore;
-  if (changedPaths.length === 0) {
+  if (changedPaths.length !== 0) {
     // edits were made to /docs/** 
     contentStore = await readData(changedPaths);
   } else {
@@ -32,7 +32,6 @@ async function getFileContent() {
     const allFilePaths = getAllPaths();
     contentStore = await readData(allFilePaths);
   }
-  console.log('content store: \n', contentStore);
   return contentStore;
 }
 
@@ -267,7 +266,6 @@ TODO
 - can create, delete, update i.e. handle a JP language Page 
 - can update Author(s) field with the full list of authors
 - Includes a tag field with the repo ?? 
-- Allow the 
 
 Docs
 - All docs are required to have frontmatter: at least lang, title, slug (must be unique)
@@ -283,5 +281,29 @@ Docs
 Migration requirements
 Handling failures
 - If update or creation or deletion fails, check the log
+
+Creating and persist a unique id based on slug provided
+- Every unique file has a refid (can collide) AND a uuid (cannot collide).
+    - Files and refId are in possible many to one relationship. Example, eng and ja language files share a refId and 
+    - live together under 1 entry as localized versions in Contentful. 
+    - Files and uuid are in a one-to-one relationship. Those same Eng and ja lang files each have different uuids
+    - Contentful -> Inside ref:authorization, a uuid's field contains a list of associated files e.g. ['uuid:auth_ja_dateCreated', uuid:'auth_ja_dateCreated']
+    - Github docs -> Inside file, record will also contain it's own UUID (directly inline)
+- A user updates a file in github
+    - Update is to content -> no issues, use the ref id and simply update based on file's locale
+    - Update is to frontmatter -> 
+      - Title updated -> No issues
+      - Lang updated -> If not an supported lang, error
+                     -> If a supported lang (jp -> eng), would update the wrong version of the content. That should be caught in review.
+      - Slug updated -> Leads to a different reference id -> Creates a new entry entirely (this should be caught in review)
+      - uuid -> (this should not be manually updated) 
+- A user deletes a file in Github
+    - Changed file will have no content
+- Generated and stored the first time that a related record is created in CMS
+    - Happens when a new file is created
+    - Happens when a 
+
+- Notes 
+    - Anytime there are new documentations to add in different supported languages, the supported languages need to be updated
 
 */
