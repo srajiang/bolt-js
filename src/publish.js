@@ -296,9 +296,14 @@ Creating and persist a unique id based on slug provided
       - Lang updated -> If not an supported lang, error
                      -> If a supported lang (jp -> eng), would update the wrong version of the content. That should be caught in review.
       - Slug updated -> Leads to a different reference id -> Creates a new entry entirely (this should be caught in review)
-      - uuid -> (this should not be manually updated) 
+      - (Auto-generated) uuid ->
 - A user deletes a file in Github
-    - Changed file will have no content
+    - When a changed file has no content, it has either been deleted or renamed
+    - Get the last previous commit that affected the file that is not current
+    - Checkout the version at the commit where the file was LAST edited
+    - Get entry associated with its refId
+      - Update uuids reference: Remove its uuid from the uuids array
+    - 
 - Generated and stored the first time that a related record is created in CMS
     - Happens when a new file is created
     - Happens when a 
