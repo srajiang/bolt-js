@@ -3,7 +3,7 @@
   publishing documentation updates to contentful cms
  */
 import contentful from 'contentful-management';
-import fs from 'fs';
+import fs, { read } from 'fs';
 import marked from 'marked';
 
 // init client
@@ -19,22 +19,38 @@ try {
   console.log('Error processing request', error);
 }
 
+// determines whether to fetch all file content or
+// just content from changed paths
+async function getFileContent() {
+  const changedPaths = getPaths();
+  let contentStore;
+  if (changedPaths.length === 0) {
+    // edits were made to /docs/** 
+    contentStore = await readData(changedPaths);
+  } else {
+    // workflow was manually triggered
+    const allFilePaths = getAllPaths();
+    contentStore = await readData(allFilePaths);
+  }
+  console.log('content store: \n', contentStore);
+  return contentStore;
+}
+
 async function publishToCms() {
-  // const allFiles = getAllPaths(); // TODO: Read 
-  const allChangedFiles = await readData(getPaths());
-  const fPaths = Object.keys(allChangedFiles);
+  const fileContentStore = await getFileContent();
+  const fPaths = Object.keys(fileContentStore);
   const log = {};
   
-  // process each changed file
+  // process each file
   for (const path of fPaths) {
-    const fContent = allChangedFiles[path];
-    const { frontMatter } = parse(fContent);
+    const content = fileContentStore[path];
+    const { frontMatter } = parse(content);
     const refId = formatRefId(frontMatter);
     
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
-    // if changed file has content
-    if (fContent !== null) {
+    // for update a file must have content
+    if (content !== null) {
       if (!hasRequiredFields(frontMatter)) {
         log[path] = 'Front matter must have a valid lang, slug and title field';
         continue;
@@ -45,7 +61,7 @@ async function publishToCms() {
         const entry = await environ.getEntry(refId);
         entry.fields.title[currLocale] = frontMatter['title'];
         entry.fields.author[currLocale] = [process.env.AUTHOR];
-        entry.fields.markdown[currLocale] = fContent;
+        entry.fields.markdown[currLocale] = content;
         entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
         const updated = await entry.update();
         // TODO: Temp logger
@@ -53,7 +69,7 @@ async function publishToCms() {
       } catch (err) {
         if (err.name === "NotFound") {
           // create a new entry
-          const pageEntry = getPageEntry(frontMatter, currLocale, path, fContent);
+          const pageEntry = getPageEntry(frontMatter, currLocale, path, content);
           try {
             const entry = await environ.createEntryWithId('page', refId, pageEntry);
             log[path] = `Entry created: ${entry.sys.id} on ${updated.sys.createdAt} by ${updated.sys.createdBy}`;
@@ -63,67 +79,22 @@ async function publishToCms() {
         }
         if (err.name === "VersionMismatch") {
           // tried to update something whose version is different
-          console.log('LOG: Version mismatch');
           log[path] = err.message;
         }
       }
     }
-    // changed file has no content when slug is updated or file deleted
-    if (fContent === null) {
-      try {
-        const res = await environ.deleteEntry(refId);
-        log[path] = res;
-      } catch (err) {
-        console.log('Delete error: ', err);
-        log[path] = err.message;
-      }
+    // when file has no content a file is likely deleted
+    // function will do nothing and update the output log.
+    if (content === null) {
+      log[path] = 'This file had no content, so the file may have been deleted. No action taken';
+      // try {
+      //   const res = await environ.deleteEntry(refId);
+      //   log[path] = res;
+      // } catch (err) {
+      //   console.log('Delete error: ', err);
+      //   log[path] = err.message;
+      // }
     }
-      // Try to update entry  
-    //   client.getSpace(spaceId)
-    //   .then((space) => space.getEnvironment(envId))
-    //   .then((environment) => environment.getEntry(refId))
-    //   .then(async (entry) => {
-    //     console.log('LOG: Existing entry, updating.. ', entry.sys.id);
-    //     entry.fields.title[currLocale] = frontMatter['title'];
-    //     entry.fields.author[currLocale] = [process.env.AUTHOR];
-    //     entry.fields.markdown[currLocale] = fContent;
-    //     entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-    //     await entry.update();
-    //     console.log('LOG: Entry updated');
-    //     log[path] = `Entry updated: ${entry.sys.id} `;
-    //   })
-    //   .catch((err) => {
-    //     // Create a new entry if entry is not found
-    //     if (err.name === 'NotFound') {
-    //       client.getSpace(spaceId)
-    //       .then((space) => space.getEnvironment(envId))
-    //       .then(async (environment) => {
-    //         let pageEntry = getPageEntry(frontMatter, currLocale, path, fContent);
-    //         await environment.createEntryWithId('page', refId, pageEntry);
-    //         console.log('LOG: Entry created');
-    //         log[path] = `Entry created: ${entry.sys.id} `;
-    //       })
-    //       .catch((error) => {
-    //         console.log("LOG: Create attempted and failed: ", error);
-    //         log[path] = `Create attempted and failed: ${error}`
-    //       });
-    //     } else {
-    //       console.log("LOG: Unresolved error: \n", err);
-    //       log[path] = `Unresolved error: ${err}`
-    //     }
-    //   });
-    // }
-    // // When there's no content, a file is deleted or renamed
-    // if (fContent === null) {
-    //   // TODO: could this be archive action?
-    //   client.getSpace(spaceId)
-    //     .then(space => space.getEnvironment(envId))
-    //     .then(environment => environment.deleteEntry(refId))
-    //     .then(() => log[path] = `Deleted entry: ${refId}`)
-    //     .catch(error => {
-    //       console.log('DELETE ERROR: ', error);
-    //       log[path] = `Error deleting entry: ${error}`;
-    //     })
   }
   // TODO return this output to Github action
   console.log('===LOG OUTPUT START====\n', log);
@@ -134,7 +105,6 @@ async function publishToCms() {
 
 // checks for required fields
 const hasRequiredFields = (frontMatter) => {
-  console.log('frontmatter\n', frontMatter);
   const { slug, lang, title } = frontMatter;
   return (slug !== undefined && slug !== '' ) &&
    (lang !== undefined && lang !== '') &&
@@ -177,7 +147,7 @@ function formatRefId(frontMatter) {
    * <org>_<repo>_<slug>
    * */
   refId = `${process.env.REPOSITORY}_${frontMatter.slug}`;
-  console.log('ref id is: \n', refId.replaceAll('/', '_'));
+  // console.log('ref id is: \n', refId.replaceAll('/', '_'));
   return refId.replaceAll('/', '_'); 
 }
 
@@ -199,7 +169,7 @@ const getLocale = (lang) => {
 }
 
 // formats a new page entry
-const getPageEntry = (frontMatter, currLocale, path, fContent) => {
+const getPageEntry = (frontMatter, currLocale, path, content) => {
   // search
   if (getLocale(frontMatter['lang'])) {
     return {
@@ -214,7 +184,7 @@ const getPageEntry = (frontMatter, currLocale, path, fContent) => {
           [currLocale]: `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`,
         },
         markdown: {
-          [currLocale]: fContent
+          [currLocale]: content
         },
       }
     };
@@ -290,18 +260,17 @@ TODO
 - add validation of front matter ✅
 - Add simple activity logging ✅
 - Make activity logging accessible to other github actions 
-- 👀 using slug from front-matter for unique identifier 
+- 👀 using slug from front-matter for unique identifier ✅ 
   - when a slug is updated?? (i.e new ref ID) 
-    - can delete existing Page
 - can pull locale field from the front-matter ✅
-- can add both english and japanese example at the same time
+- can add both english and japanese example at the same time ✅
 - can create, delete, update i.e. handle a JP language Page 
 - can update Author(s) field with the full list of authors
-- Includes a tag field with the repo
-- Create a standalone triggerable publish action (not triggered by changed files) i.e. a publish-all
+- Includes a tag field with the repo ?? 
+- Allow the 
 
-Docs requirements
-- Required frontmatter: lang, title, slug (must be unique)
+Docs
+- All docs are required to have frontmatter: at least lang, title, slug (must be unique)
 - Slugs
   - Slugs should use - not _ e.g. listening-messages
   - Slugs must be unique (excepting localized versions. These must always match in order
