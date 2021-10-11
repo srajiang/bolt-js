@@ -13,12 +13,6 @@ const client = contentful.createClient({
   accessToken: process.env.CONTENTFUL_API_KEY
 });
 
-try {
-  publishToCms();
-} catch (error) {
-  console.log('Error processing request', error);
-}
-
 // returns filepaths for all docs files
 const getAllPaths = () => {
   return process.env.ALL_FILES.split(' ')
@@ -198,7 +192,7 @@ const TYPES = Object.freeze({
   paragraph: "paragraph"
 });
 
-async function publishToCms() {
+const publishToCms = async () => {
   const fileContentStore = await getFileContent();
   const fPaths = Object.keys(fileContentStore);
   const log = {};
@@ -266,6 +260,12 @@ async function publishToCms() {
   // TODO return this output to Github action
   console.log('===LOG OUTPUT START====\n', log);
   console.log('===LOG OUTPUT END======');
+}
+
+try {
+  publishToCms();
+} catch (error) {
+  console.log('Error processing request', error);
 }
 
 
