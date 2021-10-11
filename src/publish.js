@@ -268,8 +268,25 @@ const publishToCms = async () => {
   console.log('===LOG OUTPUT END======');
 }
 
+const updateTags = async () => {
+  const source = getSourceTag();
+  const space = await client.getSpace(spaceId);
+  const environ = await space.getEnvironment(envId);
+  const tags = await environ.getTags();
+  let hasTag = false;
+  for (let tag of tags.items) {
+    if (tag.sys.id === source) {
+      hasTag = true;
+    }
+  }
+  if (!hasTag) {
+    environ.createTag(source, source, 'public');
+  }
+}
+
 const publish = async () => {
   try {
+    await updateTags();
     await publishToCms();
   } catch (error) {
     console.log('Error processing request', error);
