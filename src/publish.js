@@ -63,6 +63,7 @@ const hasFrontMatter = (lexed) => {
 
 // checks for required fields
 const hasRequiredFields = (frontMatter) => {
+  console.log(frontMatter);
   const { slug, lang, title } = frontMatter;
   return (slug !== undefined && slug !== '' ) &&
    (lang !== undefined && lang !== '') &&
@@ -73,34 +74,6 @@ const hasRequiredFields = (frontMatter) => {
 const getSourceTag = () => {
   return process.env.REPOSITORY.split('/')[1];
 }
-/**
- * returns a formatted reference id
- * in format of <org>__<repo>__docs__<filename>
- * i.e. slackapi_bolt-js__docs_mydoc.md
- * Note: CMS accepts only _, - or . in ids
-*/ 
-// function formatRefId(path, locale) {
-//   let refId;
-//   /**
-//    * languages in other files contain a prefix 
-//    * e.g. ja_ in docs/_advanced/ja_document_name_here
-//    * for non en-US locales
-//    * remove the language prefix on the filename
-//    * before generating the refId
-//    * e.g. docs/ja_document_name_here => docs/document_name_here 
-//    * */
-//   if(locale !== 'en-US') {
-//     console.log('++ the path before is ', path);
-//     let tmp = path.split('/');
-//     let filename = tmp[tmp.length - 1];
-//     let i = filename.indexOf('_');
-//     tmp[tmp.length - 1] = filename.slice(i + 1);
-//     path = tmp.join('_');
-//     console.log('++ the path after is ', path);
-//   }
-//   refId = `${process.env.REPOSITORY}__${path}`;
-//   return refId.replaceAll('/', '_'); 
-// }
 
 // TODO: update page manifest
 const validateAndUpdateManifest = async (changedFiles, allFiles) => {
@@ -202,6 +175,7 @@ const TYPES = Object.freeze({
   paragraph: "paragraph"
 });
 
+// primary function to create, update, entries
 const publishToCms = async () => {
   const fileContentStore = await getFileContent();
   const fPaths = Object.keys(fileContentStore);
@@ -268,6 +242,7 @@ const publishToCms = async () => {
   console.log('===LOG OUTPUT END======');
 }
 
+// adds new tags if necessary
 const updateTags = async () => {
   const source = getSourceTag();
   const space = await client.getSpace(spaceId);
@@ -304,14 +279,12 @@ TODO
 - Add simple activity logging ✅
 - Make activity logging accessible to other github actions 
 - 👀 using slug from front-matter for unique identifier ✅ 
-  - when a slug is updated?? (i.e new ref ID) 
 - can pull locale field from the front-matter ✅
 - can add both english and japanese example at the same time ✅
-- can create, delete, update i.e. handle a JP language Page 
-- can update Author(s) field with the full list of authors
-- Includes a tag field with the repom??
-
-- Va
+- can create, update i.e. handle a JP language Page ✅
+- can update Author(s) field with the full list of authors 
+- Includes a tag field with the repo ✅
+- Should handle asset upload to contentful??
 
 Docs
 - All docs are required to have frontmatter: at least lang, title, slug (must be unique)
