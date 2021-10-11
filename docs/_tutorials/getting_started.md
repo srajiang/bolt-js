@@ -1,6 +1,6 @@
 ---
 title: Getting started
-order: 1
+order: 0
 slug: getting-started
 lang: en
 layout: tutorial

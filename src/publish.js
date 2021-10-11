@@ -152,6 +152,8 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
 // returns obj with front matter + page content separate
 const parse = (data) => {
   const lexed = marked.lexer(data);
+  console.log('lexed is:', lexed);
+  console.log('does it have front matter?', hasFrontMatter(lexed));
   const frontMatter = {};
   if (hasFrontMatter(lexed)) {
     let split = lexed[1]['raw'].split('\n');
