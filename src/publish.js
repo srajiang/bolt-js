@@ -3,7 +3,7 @@
   publishing documentation updates to contentful cms
  */
 import contentful from 'contentful-management';
-import fs, { read } from 'fs';
+import fs from 'fs';
 import marked from 'marked';
 
 // init client
@@ -45,9 +45,9 @@ async function publishToCms() {
     const content = fileContentStore[path];
     const { frontMatter } = parse(content);
     const refId = formatRefId(frontMatter);
-    
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
+
     // for update a file must have content
     if (content !== null) {
       if (!hasRequiredFields(frontMatter)) {
@@ -62,6 +62,10 @@ async function publishToCms() {
         entry.fields.author[currLocale] = [process.env.AUTHOR];
         entry.fields.markdown[currLocale] = content;
         entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
+        const repo = process.env.REPOSITORY.split('/')[1];
+        if (!entry.fields.tag.includes(repo)) {
+          entry.fields.tag.push(repo);
+        }
         const updated = await entry.update();
         // TODO: Temp logger
         log[path] = `Entry updated: ${updated.sys.id} on ${updated.sys.updatedAt} by ${updated.sys.updatedBy}`;
@@ -72,6 +76,7 @@ async function publishToCms() {
           try {
             const entry = await environ.createEntryWithId('page', refId, pageEntry);
             log[path] = `Entry created: ${entry.sys.id} on ${updated.sys.createdAt} by ${updated.sys.createdBy}`;
+            await entry.publish();
           } catch (error) {
             log[path] = error;
           }
@@ -139,14 +144,26 @@ const hasRequiredFields = (frontMatter) => {
 //   return refId.replaceAll('/', '_'); 
 // }
 
-function formatRefId(frontMatter) {
+// update page manifest
+const validateAndUpdateManifest = async (changedFiles, allFiles) => {
+  // There is a manifest file. If not, error
+
+  // If manifest file is changed
+    // Validate that every file listed in the manifest also exists in FS. If not, error
+    // update the manifest with the new manifest
+  
+  // If manifest file is unchanged
+    // Confirm every file in listed in manifest also exists in fs. If not, error  
+}
+
+// generates a reference id that corresponds to Contentful entry id
+const formatRefId = (frontMatter) => {
   let refId;
   /**
    * generates a ref id in the following format:
    * <org>_<repo>_<slug>
    * */
   refId = `${process.env.REPOSITORY}_${frontMatter.slug}`;
-  // console.log('ref id is: \n', refId.replaceAll('/', '_'));
   return refId.replaceAll('/', '_'); 
 }
 
@@ -185,6 +202,9 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
         markdown: {
           [currLocale]: content
         },
+        tags: {
+          [currLocale]: [process.env.REPOSITORY.split('/')[1]]
+        }
       }
     };
   } else {
@@ -192,12 +212,12 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
   }
 }
 // returns filepaths for all docs files
-function getAllPaths() {
+const getAllPaths = () => {
   return process.env.ALL_FILES.split(' ')
 }
 
 // returns changed filepaths including docs/* only
-function getPaths() {
+const getPaths = () => {
   return process.env.FILES_CHANGED
   .split(' ') 
   .filter(str => /^docs\/.*/.test(str)); 
@@ -205,7 +225,7 @@ function getPaths() {
 
 // accepts an array of paths and returns an object where
 // key is filepath and value is the associated file data
-async function readData(fPaths) {
+const readData = async (fPaths) => {
   let fileData = {};
   for (const path of fPaths) {
     try {
@@ -265,7 +285,9 @@ TODO
 - can add both english and japanese example at the same time ✅
 - can create, delete, update i.e. handle a JP language Page 
 - can update Author(s) field with the full list of authors
-- Includes a tag field with the repo ?? 
+- Includes a tag field with the repom??
+
+- Va
 
 Docs
 - All docs are required to have frontmatter: at least lang, title, slug (must be unique)
@@ -289,21 +311,29 @@ Creating and persist a unique id based on slug provided
     - Files and uuid are in a one-to-one relationship. Those same Eng and ja lang files each have different uuids
     - Contentful -> Inside ref:authorization, a uuid's field contains a list of associated files e.g. ['uuid:auth_ja_dateCreated', uuid:'auth_ja_dateCreated']
     - Github docs -> Inside file, record will also contain it's own UUID (directly inline)
-- A user updates a file in github
-    - Update is to content -> no issues, use the ref id and simply update based on file's locale
-    - Update is to frontmatter -> 
-      - Title updated -> No issues
-      - Lang updated -> If not an supported lang, error
-                     -> If a supported lang (jp -> eng), would update the wrong version of the content. That should be caught in review.
-      - Slug updated -> Leads to a different reference id -> Creates a new entry entirely (this should be caught in review)
-      - (Auto-generated) uuid ->
-- A user deletes a file in Github
-    - When a changed file has no content, it has either been deleted or renamed
-    - Get the last previous commit that affected the file that is not current
-    - Checkout the version at the commit where the file was LAST edited
-    - Get entry associated with its refId
-      - Update uuids reference: Remove its uuid from the uuids array
-    - 
+
+- A list of files that will either have or NOT have content associated
+    - has content?
+      - A user has updated or added a file in github
+        - Update is to content -> no issues, use the ref id and simply update based on file's locale
+        - Update is to frontmatter -> 
+          - Title updated -> No issues
+          - Lang updated -> If not an supported lang, error
+                        -> If a supported lang (jp -> eng), would update the wrong version of the content. That should be caught in review.
+          - Slug updated -> Leads to a different reference id -> Creates a new entry entirely (this should be caught in review)    
+          - UUID (uuids 1:1 with files)
+            - If there's NOT already a UUID
+            -   Gen a new UUID (containing date in mis)
+            -   Put in entry.uuids in the entry
+            -   Update own file with UUID 
+    - does not have content? 
+      - A user has deleted a file in Github or renamed an existing file
+        - Get the last previous commit that affected the file that is not current
+        - Checkout the version at the commit where the file was LAST edited
+        - Get its refId (based on the slug)
+        - Fetch entry associated with its refId from Contentful
+          - Update uuids reference: Remove its uuid from the uuids array in the Entry
+    
 - Generated and stored the first time that a related record is created in CMS
     - Happens when a new file is created
     - Happens when a 
