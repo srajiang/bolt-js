@@ -270,7 +270,7 @@ const publishToCms = async () => {
 
 const publish = async () => {
   try {
-    await publishToCms(sourceTag);
+    await publishToCms();
   } catch (error) {
     console.log('Error processing request', error);
   }
