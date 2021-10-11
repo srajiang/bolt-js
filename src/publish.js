@@ -268,19 +268,19 @@ const publishToCms = async () => {
   console.log('===LOG OUTPUT END======');
 }
 
-const updateTags = async () => {
-  const source = getSourceTag();
-  const space = await client.getSpace(spaceId);
-  const environ = await space.getEnvironment(envId);
-  const tags = await environ.getTags();
-  if (!tags.includes(source)) {
-    environ.createTag(source, source, 'public');
-  }
-}
+// const updateTags = async () => {
+//   const source = getSourceTag();
+//   const space = await client.getSpace(spaceId);
+//   const environ = await space.getEnvironment(envId);
+//   const tags = await environ.getTags();
+//   if (!tags.includes(source)) {
+//     environ.createTag(source, source, 'public');
+//   }
+// }
 
 const publish = async () => {
   try {
-    await updateTags();
+    // await updateTags();
     await publishToCms(sourceTag);
   } catch (error) {
     console.log('Error processing request', error);
