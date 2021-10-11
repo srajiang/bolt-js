@@ -156,9 +156,9 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
         markdown: {
           [currLocale]: content
         },
-        tag: {
-          [currLocale]: [process.env.REPOSITORY.split('/')[1]]
-        }
+        // tag: {
+        //   [currLocale]: [process.env.REPOSITORY.split('/')[1]]
+        // }
       }
     };
   } else {
@@ -220,9 +220,9 @@ const publishToCms = async () => {
         entry.fields.markdown[currLocale] = content;
         entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
         const repo = process.env.REPOSITORY.split('/')[1];
-        if (!entry.fields.tag.includes(repo)) {
-          entry.fields.tag.push(repo);
-        }
+        // if (!entry.fields.tag.includes(repo)) {
+        //   entry.fields.tag.push(repo);
+        // }
         const updated = await entry.update();
         // TODO: Temp logger
         log[path] = `Entry updated: ${updated.sys.id} on ${updated.sys.updatedAt} by ${updated.sys.updatedBy}`;
