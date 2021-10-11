@@ -58,7 +58,7 @@ async function getFileContent() {
 
 // returns true if the document has horizontal rule delineated front matter
 const hasFrontMatter = (lexed) => {
-  return ((lexed)[0] && lexed[2] && lexed[0]["type"] === TYPES.hr && lexed[2]["type"] === TYPES.hr);
+  return ((lexed)[0] && lexed[2] && lexed[0]["type"] === TYPES.hr && (lexed[2]["type"] === TYPES.hr || lexed[3]["type"] === TYPES.hr));
 }
 
 // checks for required fields

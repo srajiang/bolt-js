@@ -1,6 +1,6 @@
 ---
 title: Bolt 入門ガイド
-order: 0
+order: 1
 slug: getting-started
 lang: ja-jp
 layout: tutorial
