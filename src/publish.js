@@ -19,6 +19,18 @@ try {
   console.log('Error processing request', error);
 }
 
+// returns filepaths for all docs files
+const getAllPaths = () => {
+  return process.env.ALL_FILES.split(' ')
+}
+
+// returns changed filepaths including docs/* only
+const getPaths = () => {
+  return process.env.FILES_CHANGED
+  .split(' ') 
+  .filter(str => /^docs\/.*/.test(str)); 
+}
+
 // determines whether to fetch all file content or
 // just content from changed paths
 async function getFileContent() {
@@ -210,17 +222,6 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
   } else {
     return null;
   }
-}
-// returns filepaths for all docs files
-const getAllPaths = () => {
-  return process.env.ALL_FILES.split(' ')
-}
-
-// returns changed filepaths including docs/* only
-const getPaths = () => {
-  return process.env.FILES_CHANGED
-  .split(' ') 
-  .filter(str => /^docs\/.*/.test(str)); 
 }
 
 // accepts an array of paths and returns an object where
