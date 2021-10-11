@@ -280,7 +280,7 @@ const updateTags = async () => {
     }
   }
   if (!hasTag) {
-    environ.createTag(source, source, 'public');
+    environ.createTag(source, source);
   }
 }
 
