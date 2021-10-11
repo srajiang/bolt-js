@@ -31,6 +31,21 @@ const getPaths = () => {
   .filter(str => /^docs\/.*/.test(str)); 
 }
 
+// accepts an array of paths and returns an object where
+// key is filepath and value is the associated file data
+const readData = async (fPaths) => {
+  let fileData = {};
+  for (const path of fPaths) {
+    try {
+      let data = await fs.promises.readFile(path, 'utf8');
+      fileData[path] = data;
+    } catch (err) {
+      fileData[path] = null;
+    }
+  }
+  return fileData;
+}
+
 // determines whether to fetch all file content or
 // just content from changed paths
 async function getFileContent() {
@@ -46,6 +61,142 @@ async function getFileContent() {
   }
   return contentStore;
 }
+
+// returns true if the document has horizontal rule delineated front matter
+const hasFrontMatter = (lexed) => {
+  return ((lexed)[0] && lexed[2] && lexed[0]["type"] === TYPES.hr && lexed[2]["type"] === TYPES.hr);
+}
+
+// checks for required fields
+const hasRequiredFields = (frontMatter) => {
+  const { slug, lang, title } = frontMatter;
+  return (slug !== undefined && slug !== '' ) &&
+   (lang !== undefined && lang !== '') &&
+    (title !== undefined && title !== '');
+};
+
+/**
+ * returns a formatted reference id
+ * in format of <org>__<repo>__docs__<filename>
+ * i.e. slackapi_bolt-js__docs_mydoc.md
+ * Note: CMS accepts only _, - or . in ids
+*/ 
+// function formatRefId(path, locale) {
+//   let refId;
+//   /**
+//    * languages in other files contain a prefix 
+//    * e.g. ja_ in docs/_advanced/ja_document_name_here
+//    * for non en-US locales
+//    * remove the language prefix on the filename
+//    * before generating the refId
+//    * e.g. docs/ja_document_name_here => docs/document_name_here 
+//    * */
+//   if(locale !== 'en-US') {
+//     console.log('++ the path before is ', path);
+//     let tmp = path.split('/');
+//     let filename = tmp[tmp.length - 1];
+//     let i = filename.indexOf('_');
+//     tmp[tmp.length - 1] = filename.slice(i + 1);
+//     path = tmp.join('_');
+//     console.log('++ the path after is ', path);
+//   }
+//   refId = `${process.env.REPOSITORY}__${path}`;
+//   return refId.replaceAll('/', '_'); 
+// }
+
+// TODO: update page manifest
+const validateAndUpdateManifest = async (changedFiles, allFiles) => {
+  // There is a manifest file. If not, error
+
+  // If manifest file is changed
+    // Validate that every file listed in the manifest also exists in FS. If not, error
+    // update the manifest with the new manifest
+  
+  // If manifest file is unchanged
+    // Confirm every file in listed in manifest also exists in fs. If not, error  
+}
+
+// generates a reference id that corresponds to Contentful entry id
+const formatRefId = (frontMatter) => {
+  let refId;
+  /**
+   * generates a ref id in the following format:
+   * <org>_<repo>_<slug>
+   * */
+  refId = `${process.env.REPOSITORY}_${frontMatter.slug}`;
+  return refId.replaceAll('/', '_'); 
+}
+
+// lookup supported locales
+const getLocale = (lang) => {
+  if (!lang) return;
+  const locales =  new Map();
+  // TODO when supporting new locales, add an entry here
+  locales.set(new Set(['en', 'en-US']), 'en-US');
+  locales.set(new Set(['jp', 'ja-jp']), 'ja-JP');
+
+  let currLocale;
+  Array.from(locales.keys()).forEach((k) => {
+    if (k.has(lang)) {
+      currLocale = locales.get(k);  
+    }
+  });
+  return currLocale;
+}
+
+// formats a new page entry
+const getPageEntry = (frontMatter, currLocale, path, content) => {
+  // search
+  if (getLocale(frontMatter['lang'])) {
+    return {
+      fields: {
+        title: {
+          [currLocale]: frontMatter['title']
+        },
+        author: {
+          [currLocale]: [process.env.AUTHOR]
+        },
+        source: {
+          [currLocale]: `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`,
+        },
+        markdown: {
+          [currLocale]: content
+        },
+        tags: {
+          [currLocale]: [process.env.REPOSITORY.split('/')[1]]
+        }
+      }
+    };
+  } else {
+    return null;
+  }
+}
+
+// returns obj with front matter + page content separate
+const parse = (data) => {
+  const lexed = marked.lexer(data);
+  const frontMatter = {};
+  if (hasFrontMatter(lexed)) {
+    let split = lexed[1]['raw'].split('\n');
+    for (const entry of split) {
+      let [key, value] = entry.split(':');
+      frontMatter[key] = value.trim();
+    }
+  }
+  const content = lexed.filter((val, i) => i !== 0 && i !== 1 && i !== 2); 
+  return {
+    frontMatter,
+    content
+  }
+}
+
+// utility object with lexed types data
+const TYPES = Object.freeze({
+  hr: "hr",
+  space: "space",
+  code: "code",
+  paragraph: "paragraph"
+});
 
 async function publishToCms() {
   const fileContentStore = await getFileContent();
@@ -115,159 +266,6 @@ async function publishToCms() {
   // TODO return this output to Github action
   console.log('===LOG OUTPUT START====\n', log);
   console.log('===LOG OUTPUT END======');
-}
-
-// helpers
-
-// checks for required fields
-const hasRequiredFields = (frontMatter) => {
-  const { slug, lang, title } = frontMatter;
-  return (slug !== undefined && slug !== '' ) &&
-   (lang !== undefined && lang !== '') &&
-    (title !== undefined && title !== '');
-};
-
-/**
- * returns a formatted reference id
- * in format of <org>__<repo>__docs__<filename>
- * i.e. slackapi_bolt-js__docs_mydoc.md
- * Note: CMS accepts only _, - or . in ids
-*/ 
-// function formatRefId(path, locale) {
-//   let refId;
-//   /**
-//    * languages in other files contain a prefix 
-//    * e.g. ja_ in docs/_advanced/ja_document_name_here
-//    * for non en-US locales
-//    * remove the language prefix on the filename
-//    * before generating the refId
-//    * e.g. docs/ja_document_name_here => docs/document_name_here 
-//    * */
-//   if(locale !== 'en-US') {
-//     console.log('++ the path before is ', path);
-//     let tmp = path.split('/');
-//     let filename = tmp[tmp.length - 1];
-//     let i = filename.indexOf('_');
-//     tmp[tmp.length - 1] = filename.slice(i + 1);
-//     path = tmp.join('_');
-//     console.log('++ the path after is ', path);
-//   }
-//   refId = `${process.env.REPOSITORY}__${path}`;
-//   return refId.replaceAll('/', '_'); 
-// }
-
-// update page manifest
-const validateAndUpdateManifest = async (changedFiles, allFiles) => {
-  // There is a manifest file. If not, error
-
-  // If manifest file is changed
-    // Validate that every file listed in the manifest also exists in FS. If not, error
-    // update the manifest with the new manifest
-  
-  // If manifest file is unchanged
-    // Confirm every file in listed in manifest also exists in fs. If not, error  
-}
-
-// generates a reference id that corresponds to Contentful entry id
-const formatRefId = (frontMatter) => {
-  let refId;
-  /**
-   * generates a ref id in the following format:
-   * <org>_<repo>_<slug>
-   * */
-  refId = `${process.env.REPOSITORY}_${frontMatter.slug}`;
-  return refId.replaceAll('/', '_'); 
-}
-
-// lookup supported locales
-const getLocale = (lang) => {
-  if (!lang) return;
-  const locales =  new Map();
-  // TODO when supporting new locales, add an entry here
-  locales.set(new Set(['en', 'en-US']), 'en-US');
-  locales.set(new Set(['jp', 'ja-jp']), 'ja-JP');
-
-  let currLocale;
-  Array.from(locales.keys()).forEach((k) => {
-    if (k.has(lang)) {
-      currLocale = locales.get(k);  
-    }
-  });
-  return currLocale;
-}
-
-// formats a new page entry
-const getPageEntry = (frontMatter, currLocale, path, content) => {
-  // search
-  if (getLocale(frontMatter['lang'])) {
-    return {
-      fields: {
-        title: {
-          [currLocale]: frontMatter['title']
-        },
-        author: {
-          [currLocale]: [process.env.AUTHOR]
-        },
-        source: {
-          [currLocale]: `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`,
-        },
-        markdown: {
-          [currLocale]: content
-        },
-        tags: {
-          [currLocale]: [process.env.REPOSITORY.split('/')[1]]
-        }
-      }
-    };
-  } else {
-    return null;
-  }
-}
-
-// accepts an array of paths and returns an object where
-// key is filepath and value is the associated file data
-const readData = async (fPaths) => {
-  let fileData = {};
-  for (const path of fPaths) {
-    try {
-      let data = await fs.promises.readFile(path, 'utf8');
-      fileData[path] = data;
-    } catch (err) {
-      fileData[path] = null;
-    }
-  }
-  return fileData;
-}
-
-// returns obj with front matter + page content separate
-const parse = (data) => {
-  const lexed = marked.lexer(data);
-  const frontMatter = {};
-  if (hasFrontMatter(lexed)) {
-    let split = lexed[1]['raw'].split('\n');
-    for (const entry of split) {
-      let [key, value] = entry.split(':');
-      frontMatter[key] = value.trim();
-    }
-  }
-  const content = lexed.filter((val, i) => i !== 0 && i !== 1 && i !== 2); 
-  return {
-    frontMatter,
-    content
-  }
-}
-
-// utility object with lexed types data
-const TYPES = Object.freeze({
-  hr: "hr",
-  space: "space",
-  code: "code",
-  paragraph: "paragraph"
-});
-
-// returns true if the document has horizontal rule delineated front matter
-const hasFrontMatter = (lexed) => {
-  return ((lexed)[0] && lexed[2] && lexed[0]["type"] === TYPES.hr && lexed[2]["type"] === TYPES.hr);
 }
 
 
