@@ -156,7 +156,7 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
         markdown: {
           [currLocale]: content
         },
-        tags: {
+        tag: {
           [currLocale]: [process.env.REPOSITORY.split('/')[1]]
         }
       }
