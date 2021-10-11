@@ -69,6 +69,10 @@ const hasRequiredFields = (frontMatter) => {
     (title !== undefined && title !== '');
 };
 
+// returns the repository source
+const getSourceTag = () => {
+  return process.env.REPOSITORY.split('/')[1];
+}
 /**
  * returns a formatted reference id
  * in format of <org>__<repo>__docs__<filename>
@@ -156,9 +160,15 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
         markdown: {
           [currLocale]: content
         },
-        // tag: {
-        //   [currLocale]: [process.env.REPOSITORY.split('/')[1]]
-        // }
+      },
+      metadata: {
+        tags: [{
+          sys: {
+            type: 'Link',
+            linkType: 'Tag',
+            id: getSourceTag(),
+          }
+        }]
       }
     };
   } else {
@@ -219,20 +229,16 @@ const publishToCms = async () => {
         entry.fields.author[currLocale] = [process.env.AUTHOR];
         entry.fields.markdown[currLocale] = content;
         entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-        const repo = process.env.REPOSITORY.split('/')[1];
-        // if (!entry.fields.tag.includes(repo)) {
-        //   entry.fields.tag.push(repo);
-        // }
         const updated = await entry.update();
         // TODO: Temp logger
-        log[path] = `Entry updated: ${updated.sys.id} on ${updated.sys.updatedAt} by ${updated.sys.updatedBy}`;
+        log[path] = `Entry updated: ${updated.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
           // create a new entry
           const pageEntry = getPageEntry(frontMatter, currLocale, path, content);
           try {
             const entry = await environ.createEntryWithId('page', refId, pageEntry);
-            log[path] = `Entry created: ${entry.sys.id} on ${updated.sys.createdAt} by ${updated.sys.createdBy}`;
+            log[path] = `Entry created: ${entry.sys.id}`;
             await entry.publish();
           } catch (error) {
             log[path] = error;
@@ -262,13 +268,26 @@ const publishToCms = async () => {
   console.log('===LOG OUTPUT END======');
 }
 
-try {
-  publishToCms();
-} catch (error) {
-  console.log('Error processing request', error);
+const updateTags = async () => {
+  const source = getSourceTag();
+  const space = await client.getSpace(spaceId);
+  const environ = await space.getEnvironment(envId);
+  const tags = await environ.getTags();
+  if (!tags.includes(source)) {
+    environ.createTag(source, source, 'public');
+  }
 }
 
+const publish = async () => {
+  try {
+    await updateTags();
+    await publishToCms(sourceTag);
+  } catch (error) {
+    console.log('Error processing request', error);
+  }
+}
 
+publish();
 /* 
 
 TODO
