@@ -115,7 +115,7 @@ const getLocale = (lang) => {
 }
 
 // formats a new page entry
-const getPageEntry = (frontMatter, path, body) => {
+const getPageEntry = (path, frontMatter, body) => {
   let currLocale = getLocale(frontMatter['lang']);
   // must have a valid locale
   if (currLocale) {
@@ -174,7 +174,6 @@ const parse = (data) => {
     frontMatter,
     body,
     tokens: lexed,
-
   }
 }
 
@@ -209,14 +208,14 @@ const validateUUID = (entry, frontMatter) => {
   // }
 }
 
-const updateEntry = async (entry, frontMatter) => {
+const updateEntry = async (entry, frontMatter, body) => {
   if (!entry || !frontMatter) {
     throw new Error ('Missing entry or frontmatter');
   }
   let currLocale = getLocale(frontMatter['lang']);
   entry.fields.title[currLocale] = frontMatter['title'];
   entry.fields.author[currLocale] = [process.env.AUTHOR];
-  entry.fields.markdown[currLocale] = content;
+  entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
   entry.fields.uuid[currLocale] = frontMatter['uuid'];
   await entry.update();
@@ -243,13 +242,13 @@ const publishToCms = async () => {
         validateFrontMatter(frontMatter);
         const entry = await environ.getEntry(refId);
         validateUUID(entry, frontMatter);
-        const updated = await updateEntry(entry, frontMatter);
+        const updated = await updateEntry(entry, frontMatter, body);
         // TODO: Temp logger
         log[path] = `Entry updated: ${updated.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
           // create a new entry
-          const pageEntry = getPageEntry(frontMatter, path, body);
+          const pageEntry = getPageEntry(path, frontMatter, body);
           try {
             const entry = await environ.createEntryWithId('page', refId, pageEntry);
             log[path] = `Entry created: ${entry.sys.id}`;
