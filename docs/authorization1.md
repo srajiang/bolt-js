@@ -3,7 +3,7 @@ title: Authorization
 lang: en
 slug: authorization
 order: 2
-uuid: e38a303b-855f-472b-82da-d9ae1cc9d6f
+uuid: e38a303b-855f-472b-82da-d9ae1cc9d6
 ---
 
 <div class="section-content">

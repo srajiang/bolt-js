@@ -221,7 +221,7 @@ const publishToCms = async () => {
         // Fetch the entry
         const entry = await environ.getEntry(refId);
         // Error if uuid missing or does not match file's uuid
-        validateUUID();
+        validateUUID(entry, frontMatter);
         entry.fields.title[currLocale] = frontMatter['title'];
         entry.fields.author[currLocale] = [process.env.AUTHOR];
         entry.fields.markdown[currLocale] = content;
