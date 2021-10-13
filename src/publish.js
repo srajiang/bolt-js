@@ -45,7 +45,7 @@ const readData = async (fPaths) => {
 const getFileContent = async () => {
   const changedPaths = getPaths();
   let contentStore;
-  if (changedPaths.length !== 0) {
+  if (changedPaths.length > 0) {
     // edits were made to /docs/** 
     contentStore = await readData(changedPaths);
   } else {
