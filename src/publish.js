@@ -23,7 +23,7 @@ const getPaths = () => {
   return process.env.FILES_CHANGED
   .split(' ') 
   .filter(str => /^docs\/.*/.test(str));
-  // TODO: Change this based on the path provided by git actions
+  // TODO: Modify based on the path provided by git actions
 }
 
 // accepts an array of paths and returns an object where
@@ -45,7 +45,6 @@ const readData = async (fPaths) => {
 // just content from changed paths
 const getFileContent = async () => {
   const changedPaths = getPaths();
-  console.log('changed paths: ', changedPaths);
   let contentStore;
   if (changedPaths.length > 0) {
     // edits were made to /docs/** 
@@ -103,9 +102,9 @@ const formatRefId = (frontMatter) => {
 const getLocale = (lang) => {
   if (!lang) return;
   const locales =  new Map();
-  // TODO when supporting new locales, add an entry here
-  locales.set(new Set(['en', 'en-US']), 'en-US');
-  locales.set(new Set(['jp', 'ja-jp']), 'ja-JP');
+  // To support new locales, add an entry here
+  locales.set(new Set(['en', 'en-US', 'en-us']), 'en-US');
+  locales.set(new Set(['jp', 'ja-JP', 'ja-jp']), 'ja-JP');
 
   let currLocale;
   Array.from(locales.keys()).forEach((k) => {
@@ -175,7 +174,7 @@ const parse = (data) => {
   return {
     frontMatter,
     body,
-    tokens: lexed,
+    tokens: lexed, // not used currently
   }
 }
 
@@ -189,9 +188,14 @@ const TYPES = Object.freeze({
 
 // validate required fields
 const validateFrontMatter = (frontMatter) => {
+  // all required fields exist
   let missing = getMissingFields(frontMatter);
   if (missing.length > 0) {
     throw new Error(`Missing required field(s) ${missing}`);
+  }
+  // slug contains valid characters
+  if (frontMatter['slug'].match(/[_/*.!]+/) !== null) {
+    throw new Error(`Slug contains invalid special character. Slugs should contain hyphens only, e.g. example-doc-name.`)
   }
 }
 
@@ -328,7 +332,7 @@ TODO
 - Make activity logging accessible to other github actions
 
 Docs
-- All docs are required to have frontmatter: at least lang, title, slug (must be unique) in the proper format
+- All docs are required to have frontmatter: at least lang, title, slug (must be unique) in the proper format ✅
 - Order is not required ❗
 - Slugs
   - Add validation on slugs - Slugs should use - not _ e.g. listening-messages ❗
@@ -338,40 +342,6 @@ Docs
   - Slugs should also serve as the unique reference for the entry 
 - Making a change
   - Changing the name of a article, - update the title field (should match the filename)
-
-Migration requirements
-Handling failures
-- If update or creation or deletion fails, check the log
-
-Creating and persist a unique id based on slug provided
-- Every unique file has a refid (can collide) AND a uuid (cannot collide).
-    - Files and refId are in possible many to one relationship. Example, eng and ja language files share a refId and 
-    - live together under 1 entry as localized versions in Contentful. 
-    - Files and uuid are in a one-to-one relationship. Those same Eng and ja lang files each have different uuids
-    - Contentful -> Inside ref:authorization, a uuid's field contains a list of associated files e.g. ['uuid:auth_ja_dateCreated', uuid:'auth_ja_dateCreated']
-    - Github docs -> Inside file, record will also contain it's own UUID (directly inline)
-
-- A list of files that will either have or NOT have content associated
-    - has content?
-      - A user has updated or added a file in github
-        - Update is to content -> no issues, use the ref id and simply update based on file's locale
-        - Update is to frontmatter -> 
-          - Title updated -> No issues
-          - Lang updated -> If not an supported lang, error
-                        -> If a supported lang (jp -> eng), would update the wrong version of the content. That should be caught in review.
-          - Slug updated -> Leads to a different reference id -> Creates a new entry entirely (this should be caught in review)    
-          - UUID (uuids 1:1 with files)
-            - If there's NOT already a UUID
-            -   Gen a new UUID (containing date in mis)
-            -   Put in entry.uuids in the entry
-            -   Update own file with UUID 
-    - does not have content? 
-      - A user has deleted a file in Github or renamed an existing file
-        - Get the last previous commit that affected the file that is not current
-        - Checkout the version at the commit where the file was LAST edited
-        - Get its refId (based on the slug)
-        - Fetch entry associated with its refId from Contentful
-          - Update uuids reference: Remove its uuid from the uuids array in the Entry
   
 - Notes 
     - Anytime there are new documentations to add in different supported languages, the supported languages need to be updated

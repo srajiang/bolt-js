@@ -1,7 +1,7 @@
 ---
 title: Using TypeScript
 order: 4
-slug: using-typescript
+slug: using_typescript
 lang: en
 layout: tutorial
 permalink: /tutorial/using-typescript
