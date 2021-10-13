@@ -158,8 +158,6 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
 // returns obj with front matter + page content separate
 const parse = (data) => {
   const lexed = marked.lexer(data);
-  console.log('lexed is:', lexed);
-  console.log('does it have front matter?', hasFrontMatter(lexed));
   const frontMatter = {};
   if (hasFrontMatter(lexed)) {
     let split = lexed[1]['raw'].split('\n');
@@ -183,6 +181,21 @@ const TYPES = Object.freeze({
   paragraph: "paragraph"
 });
 
+// checks that a uuid exists and is being added
+const validateUUID = (entry, frontMatter) => {
+  let localizedUUID = entry.fields.uuid ? entry.fields.uuid[currLocale]: null;
+  console.log('entry uuid is: ', localizedUUID);
+  // provided uuid does not matching existing uuid field in the entry
+  if (localizedUUID && localizedUUID !== frontMatter['uuid']) {
+   throw new Error('Trying to update entry whose uuid does not match provided uuid') 
+  } 
+  // no uuid in existing entry and no uuid 
+  // TODO: Enable these lines
+  // if (!localizedUUID && (!frontMatter['uuid'] || !frontMatter['uuid' === ''])) {
+  //   throw new Error('Please provide a uuid in the front matter')
+  // }
+}
+
 // primary function to create, update, entries
 const publishToCms = async () => {
   const fileContentStore = await getFileContent();
@@ -205,12 +218,15 @@ const publishToCms = async () => {
       }
       const currLocale = getLocale(frontMatter['lang']);
       try {
-        // Try fetch the entry
+        // Fetch the entry
         const entry = await environ.getEntry(refId);
+        // Error if uuid missing or does not match file's uuid
+        validateUUID();
         entry.fields.title[currLocale] = frontMatter['title'];
         entry.fields.author[currLocale] = [process.env.AUTHOR];
         entry.fields.markdown[currLocale] = content;
         entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
+        entry.fields.uuid[currLocale] = frontMatter['uuid'];
         const updated = await entry.update();
         // TODO: Temp logger
         log[path] = `Entry updated: ${updated.sys.id}`;
@@ -225,9 +241,7 @@ const publishToCms = async () => {
           } catch (error) {
             log[path] = error;
           }
-        }
-        if (err.name === "VersionMismatch") {
-          // tried to update something whose version is different
+        } else {
           log[path] = err.message;
         }
       }

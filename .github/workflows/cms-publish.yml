@@ -35,6 +35,10 @@ jobs:
         id: getfile
         run: |
           echo "::set-output name=files::$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | xargs)"
+      - name: get each changed files authors
+        id: getfileauthors
+        run: |
+          echo test
       - name: get all files
         id: getall
         run: |
