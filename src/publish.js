@@ -189,7 +189,7 @@ const TYPES = Object.freeze({
 const validateFrontMatter = (frontMatter) => {
   let missing = getMissingFields(frontMatter);
   if (missing.length > 0) {
-    throw new Error('Missing required field(s)', missing);
+    throw new Error(`Missing required field(s) ${missing}`);
   }
 }
 
@@ -198,7 +198,7 @@ const validateUUID = (entry, frontMatter) => {
   let localizedUUID = entry.fields.uuid ? entry.fields.uuid[currLocale]: null;
   // provided uuid does not matching existing uuid field in the entry
   if (localizedUUID && localizedUUID !== frontMatter['uuid']) {
-   throw new Error('Trying to update entry whose uuid does not match provided uuid') 
+   throw new Error('Attempted to update entry whose uuid does not match provided uuid') 
   } 
   // no uuid in existing entry and no uuid 
   // TODO: Enable these lines
@@ -207,18 +207,18 @@ const validateUUID = (entry, frontMatter) => {
   // }
 }
 
-const updateEntry = async (entry, frontMatter, body, path) => {
+const updateEntry = (entry, frontMatter, body, path) => {
   if (!entry || !frontMatter) {
     throw new Error ('Missing entry or frontmatter');
   }
-  // console.log(entry.fields);
   let currLocale = getLocale(frontMatter['lang']);
   entry.fields.title[currLocale] = frontMatter['title'];
   entry.fields.author[currLocale] = [process.env.AUTHOR];
   entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
+  entry.fields.slug[currLocale] = frontMatter['slug'];
   // entry.fields.uuid[currLocale] = frontMatter['uuid'];
-  await entry.update();
+  return entry.update();
 }
 
 // primary function to create, update, entries
