@@ -42,7 +42,7 @@ const readData = async (fPaths) => {
 
 // determines whether to fetch all file content or
 // just content from changed paths
-async function getFileContent() {
+const getFileContent = async () => {
   const changedPaths = getPaths();
   let contentStore;
   if (changedPaths.length !== 0) {
@@ -117,7 +117,7 @@ const getLocale = (lang) => {
 
 // formats a new page entry
 const getPageEntry = (frontMatter, currLocale, path, content) => {
-  // search
+  // must have a valid locale
   if (getLocale(frontMatter['lang'])) {
     return {
       fields: {
@@ -133,6 +133,12 @@ const getPageEntry = (frontMatter, currLocale, path, content) => {
         markdown: {
           [currLocale]: content
         },
+        slug: {
+          [currLocale]: frontMatter['slug']
+        },
+        uuid: {
+          [currLocale]: frontMatter['uuid']
+        }
       },
       metadata: {
         tags: [{
@@ -230,13 +236,6 @@ const publishToCms = async () => {
     // function will do nothing and update the output log.
     if (content === null) {
       log[path] = 'This file had no content, so the file may have been deleted. No action taken';
-      // try {
-      //   const res = await environ.deleteEntry(refId);
-      //   log[path] = res;
-      // } catch (err) {
-      //   console.log('Delete error: ', err);
-      //   log[path] = err.message;
-      // }
     }
   }
   // TODO return this output to Github action
@@ -286,17 +285,18 @@ TODO
 - can update Author(s) field with the full list of authors 
 - Includes a tag field with the repo ✅
 - More robust front matter handling ✅ 
-- Should handle asset upload to contentful ?
-- Make activity logging accessible to other github actions 
+- Could handle asset upload to contentful? 
+- Make activity logging accessible to other github actions
 
 Docs
-- All docs are required to have frontmatter: at least lang, title, slug (must be unique)
+- All docs are required to have frontmatter: at least lang, title, slug (must be unique) in the proper format
+- Order is not required ❗
 - Slugs
-  - Slugs should use - not _ e.g. listening-messages
-  - Slugs must be unique (excepting localized versions. These must always match in order
+  - Slugs should use - not _ e.g. listening-messages ❗
+  - Slugs must be unique (excepting localized versions. These must always match in order) 
     for articles in other languages to be associated properly). 
   - Once a slug has been established, it should not be updated. Updating a slug will break links
-  - Slugs should also serve as the unique reference for the entry
+  - Slugs should also serve as the unique reference for the entry 
 - Making a change
   - Changing the name of a article, - update the title field (should match the filename)
 
@@ -333,11 +333,7 @@ Creating and persist a unique id based on slug provided
         - Get its refId (based on the slug)
         - Fetch entry associated with its refId from Contentful
           - Update uuids reference: Remove its uuid from the uuids array in the Entry
-    
-- Generated and stored the first time that a related record is created in CMS
-    - Happens when a new file is created
-    - Happens when a 
-
+  
 - Notes 
     - Anytime there are new documentations to add in different supported languages, the supported languages need to be updated
 
