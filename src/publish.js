@@ -195,7 +195,7 @@ const validateFrontMatter = (frontMatter) => {
   }
   // slug contains valid characters
   if (frontMatter['slug'].match(/[_/*.!]+/) !== null) {
-    throw new Error(`Slug contains invalid special character. Slugs should contain hyphens only, e.g. example-doc-name.`)
+    throw new Error(`Slug contains invalid special character. Slugs should contain hyphens only, e.g. example-doc-name.md`);
   }
 }
 
@@ -234,6 +234,13 @@ const updateEntry = (entry, frontMatter, body, path) => {
   return entry.update();
 }
 
+const createEntry = (path, frontMatter, body, refId) => {
+  const pageEntry = getPageEntry(path, frontMatter, body);
+  const entry = await environ.createEntryWithId('page', refId, pageEntry);
+  await entry.publish();
+  return entry;
+}
+
 // primary function to create, update, entries
 const publishToCms = async () => {
   const fileContentStore = await getFileContent();
@@ -247,7 +254,6 @@ const publishToCms = async () => {
     const refId = formatRefId(frontMatter);
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
-
     if (content !== null) {
       try {
         // updates existing entry
@@ -255,18 +261,14 @@ const publishToCms = async () => {
         const entry = await environ.getEntry(refId);
         validateUUID(entry, frontMatter);
         const updated = await updateEntry(entry, frontMatter, body, path);
-        // TODO: Temp logger
         log[path] = `Entry updated: ${updated.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
-          // create a new entry
-          const pageEntry = getPageEntry(path, frontMatter, body);
+          // create new entry
           try {
-            const entry = await environ.createEntryWithId('page', refId, pageEntry);
-            log[path] = `Entry created: ${entry.sys.id}`;
-            await entry.publish();
+            await createEntry(path, frontMatter, body, refId);
           } catch (error) {
-            log[path] = error;
+            log[path] = error.message;
           }
         } else {
           log[path] = err.message;
