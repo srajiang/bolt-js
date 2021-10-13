@@ -374,5 +374,8 @@ Creating and persist a unique id based on slug provided
   
 - Notes 
     - Anytime there are new documentations to add in different supported languages, the supported languages need to be updated
-
+- Publishing
+  - yml
+  - get all files step should accept a path in the config that contains the path to search within
+  - 
 */
