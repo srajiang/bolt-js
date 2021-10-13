@@ -115,7 +115,7 @@ const getLocale = (lang) => {
 }
 
 // formats a new page entry
-const getPageEntry = (frontMatter, path, content) => {
+const getPageEntry = (frontMatter, path, body) => {
   let currLocale = getLocale(frontMatter['lang']);
   // must have a valid locale
   if (currLocale) {
@@ -131,7 +131,7 @@ const getPageEntry = (frontMatter, path, content) => {
           [currLocale]: `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`,
         },
         markdown: {
-          [currLocale]: content
+          [currLocale]: body
         },
         slug: {
           [currLocale]: frontMatter['slug']
@@ -155,10 +155,11 @@ const getPageEntry = (frontMatter, path, content) => {
   }
 }
 
-// returns obj with front matter + page content separate
+// returns obj with front matter + page body separate
 const parse = (data) => {
   const lexed = marked.lexer(data);
   const frontMatter = {};
+  // store front matter
   if (hasFrontMatter(lexed)) {
     let split = lexed[1]['raw'].split('\n');
     for (const entry of split) {
@@ -166,10 +167,14 @@ const parse = (data) => {
       frontMatter[key] = value.trim();
     }
   }
-  const content = lexed.filter((val, i) => i !== 0 && i !== 1 && i !== 2); 
+  // strip out front matter from rest of body
+  const match = /---.+---/gs.exec(data);
+  const body = match ? data.slice(match.index + match[0].length) : null;
   return {
     frontMatter,
-    content
+    body,
+    tokens: lexed,
+
   }
 }
 
@@ -226,7 +231,7 @@ const publishToCms = async () => {
   // process each file
   for (const path of fPaths) {
     const content = fileContentStore[path];
-    const { frontMatter } = parse(content);
+    const { frontMatter, body } = parse(content);
     const refId = formatRefId(frontMatter);
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
@@ -244,7 +249,7 @@ const publishToCms = async () => {
       } catch (err) {
         if (err.name === "NotFound") {
           // create a new entry
-          const pageEntry = getPageEntry(frontMatter, path, content);
+          const pageEntry = getPageEntry(frontMatter, path, body);
           try {
             const entry = await environ.createEntryWithId('page', refId, pageEntry);
             log[path] = `Entry created: ${entry.sys.id}`;
