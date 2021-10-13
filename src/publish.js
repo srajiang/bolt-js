@@ -22,7 +22,8 @@ const getAllPaths = () => {
 const getPaths = () => {
   return process.env.FILES_CHANGED
   .split(' ') 
-  .filter(str => /^docs\/.*/.test(str)); 
+  .filter(str => /^docs\/.*/.test(str));
+  // TODO: Change this based on the path provided by git actions
 }
 
 // accepts an array of paths and returns an object where

@@ -8,10 +8,10 @@ name: Publish to CMS
 on:
   workflow_dispatch:  
   push:
-    branches: [ cms-workflow, main ]   # testing only
+    branches: [ cms-workflow, main ]   # TODO: Make this configurable
     paths:
     # trigger on changes matching paths:
-    - 'docs/**'
+    - 'docs/**' 
 
 jobs:   
   publish:
