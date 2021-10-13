@@ -216,8 +216,16 @@ const updateEntry = (entry, frontMatter, body, path) => {
   entry.fields.author[currLocale] = [process.env.AUTHOR];
   entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-  entry.fields.slug[currLocale] = frontMatter['slug'];
-  // entry.fields.uuid[currLocale] = frontMatter['uuid'];
+  console.log('Entry: \n', entry.fields, '\nSlug:', entry.fields.slug);
+  if (entry.fields.slug[currLocale]) {
+    entry.fields.slug[currLocale] = frontMatter['uuid'];
+  } else {
+    entry.fields.slug = {
+      [currLocale]: frontMatter['uuid']
+    };
+  }
+  // TODO: Update once uuid is mandatory
+  // entry.fields.uuid[currLocale] = frontMatter['uuid']; 
   return entry.update();
 }
 
@@ -314,6 +322,8 @@ TODO
 - Includes a tag field with the repo ✅
 - More robust front matter handling ✅ 
 - Could handle asset upload to contentful? 
+- Make logging better with summary stats for easy review and coded errors
+- Add a testing suite for this function
 - Make activity logging accessible to other github actions
 
 Docs
