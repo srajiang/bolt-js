@@ -44,6 +44,7 @@ const readData = async (fPaths) => {
 // just content from changed paths
 const getFileContent = async () => {
   const changedPaths = getPaths();
+  console.log('changed paths: ', changedPaths);
   let contentStore;
   if (changedPaths.length > 0) {
     // edits were made to /docs/** 
