@@ -196,7 +196,6 @@ const validateFrontMatter = (frontMatter) => {
 // checks that a uuid exists and is being added
 const validateUUID = (entry, frontMatter) => {
   let localizedUUID = entry.fields.uuid ? entry.fields.uuid[currLocale]: null;
-  console.log('entry uuid is: ', localizedUUID);
   // provided uuid does not matching existing uuid field in the entry
   if (localizedUUID && localizedUUID !== frontMatter['uuid']) {
    throw new Error('Trying to update entry whose uuid does not match provided uuid') 
@@ -208,7 +207,7 @@ const validateUUID = (entry, frontMatter) => {
   // }
 }
 
-const updateEntry = async (entry, frontMatter, body) => {
+const updateEntry = async (entry, frontMatter, body, path) => {
   if (!entry || !frontMatter) {
     throw new Error ('Missing entry or frontmatter');
   }
@@ -242,7 +241,7 @@ const publishToCms = async () => {
         validateFrontMatter(frontMatter);
         const entry = await environ.getEntry(refId);
         validateUUID(entry, frontMatter);
-        const updated = await updateEntry(entry, frontMatter, body);
+        const updated = await updateEntry(entry, frontMatter, body, path);
         // TODO: Temp logger
         log[path] = `Entry updated: ${updated.sys.id}`;
       } catch (err) {
@@ -311,7 +310,7 @@ TODO
 - can pull locale field from the front-matter ✅
 - can add both english and japanese example at the same time ✅
 - can create, update i.e. handle a JP language Page ✅
-- can update Author(s) field with the full list of authors 
+- can update Author(s) field with the full list of authors 💡
 - Includes a tag field with the repo ✅
 - More robust front matter handling ✅ 
 - Could handle asset upload to contentful? 
@@ -321,7 +320,7 @@ Docs
 - All docs are required to have frontmatter: at least lang, title, slug (must be unique) in the proper format
 - Order is not required ❗
 - Slugs
-  - Slugs should use - not _ e.g. listening-messages ❗
+  - Add validation on slugs - Slugs should use - not _ e.g. listening-messages ❗
   - Slugs must be unique (excepting localized versions. These must always match in order) 
     for articles in other languages to be associated properly). 
   - Once a slug has been established, it should not be updated. Updating a slug will break links
