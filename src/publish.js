@@ -216,12 +216,11 @@ const updateEntry = (entry, frontMatter, body, path) => {
   entry.fields.author[currLocale] = [process.env.AUTHOR];
   entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-  console.log('Entry: \n', entry.fields, '\nSlug:', entry.fields.slug);
-  if (entry.fields.slug[currLocale]) {
-    entry.fields.slug[currLocale] = frontMatter['uuid'];
+  if (entry.fields.slug) {
+    entry.fields.slug[currLocale] = frontMatter['slug'];
   } else {
     entry.fields.slug = {
-      [currLocale]: frontMatter['uuid']
+      [currLocale]: frontMatter['slug']
     };
   }
   // TODO: Update once uuid is mandatory
