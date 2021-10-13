@@ -61,13 +61,12 @@ const hasFrontMatter = (lexed) => {
   return ((lexed)[0] && lexed[2] && lexed[0]["type"] === TYPES.hr && (lexed[2]["type"] === TYPES.hr || lexed[3]["type"] === TYPES.hr));
 }
 
-// checks for required fields
-const hasRequiredFields = (frontMatter) => {
-  console.log(frontMatter);
-  const { slug, lang, title } = frontMatter;
-  return (slug !== undefined && slug !== '' ) &&
-   (lang !== undefined && lang !== '') &&
-    (title !== undefined && title !== '');
+// checks for required fields and returns missing
+const getMissingFields = (frontMatter) => {
+  let required = ['slug', 'title', 'lang'] // TODO: Add uuid
+  return required.filter(field => {
+    return (frontMatter[field] === undefined || frontMatter[field] === '');
+  })
 };
 
 // returns the repository source
@@ -116,9 +115,10 @@ const getLocale = (lang) => {
 }
 
 // formats a new page entry
-const getPageEntry = (frontMatter, currLocale, path, content) => {
+const getPageEntry = (frontMatter, path, content) => {
+  let currLocale = getLocale(frontMatter['lang']);
   // must have a valid locale
-  if (getLocale(frontMatter['lang'])) {
+  if (currLocale) {
     return {
       fields: {
         title: {
@@ -181,6 +181,14 @@ const TYPES = Object.freeze({
   paragraph: "paragraph"
 });
 
+// validate required fields
+const validateFrontMatter = (frontMatter) => {
+  let missing = getMissingFields(frontMatter);
+  if (missing.length > 0) {
+    throw new Error('Missing required field(s)', missing);
+  }
+}
+
 // checks that a uuid exists and is being added
 const validateUUID = (entry, frontMatter) => {
   let localizedUUID = entry.fields.uuid ? entry.fields.uuid[currLocale]: null;
@@ -194,6 +202,19 @@ const validateUUID = (entry, frontMatter) => {
   // if (!localizedUUID && (!frontMatter['uuid'] || !frontMatter['uuid' === ''])) {
   //   throw new Error('Please provide a uuid in the front matter')
   // }
+}
+
+const updateEntry = async (entry, frontMatter) => {
+  if (!entry || !frontMatter) {
+    throw new Error ('Missing entry or frontmatter');
+  }
+  let currLocale = getLocale(frontMatter['lang']);
+  entry.fields.title[currLocale] = frontMatter['title'];
+  entry.fields.author[currLocale] = [process.env.AUTHOR];
+  entry.fields.markdown[currLocale] = content;
+  entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
+  entry.fields.uuid[currLocale] = frontMatter['uuid'];
+  await entry.update();
 }
 
 // primary function to create, update, entries
@@ -212,28 +233,18 @@ const publishToCms = async () => {
 
     // for update a file must have content
     if (content !== null) {
-      if (!hasRequiredFields(frontMatter)) {
-        log[path] = 'Front matter must have a valid lang, slug and title field';
-        continue;
-      }
-      const currLocale = getLocale(frontMatter['lang']);
       try {
-        // Fetch the entry
+        // updates existing entry
+        validateFrontMatter(frontMatter);
         const entry = await environ.getEntry(refId);
-        // Error if uuid missing or does not match file's uuid
         validateUUID(entry, frontMatter);
-        entry.fields.title[currLocale] = frontMatter['title'];
-        entry.fields.author[currLocale] = [process.env.AUTHOR];
-        entry.fields.markdown[currLocale] = content;
-        entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-        entry.fields.uuid[currLocale] = frontMatter['uuid'];
-        const updated = await entry.update();
+        const updated = await updateEntry(entry, frontMatter);
         // TODO: Temp logger
         log[path] = `Entry updated: ${updated.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
           // create a new entry
-          const pageEntry = getPageEntry(frontMatter, currLocale, path, content);
+          const pageEntry = getPageEntry(frontMatter, path, content);
           try {
             const entry = await environ.createEntryWithId('page', refId, pageEntry);
             log[path] = `Entry created: ${entry.sys.id}`;
