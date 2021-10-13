@@ -211,12 +211,13 @@ const updateEntry = async (entry, frontMatter, body, path) => {
   if (!entry || !frontMatter) {
     throw new Error ('Missing entry or frontmatter');
   }
+  // console.log(entry.fields);
   let currLocale = getLocale(frontMatter['lang']);
   entry.fields.title[currLocale] = frontMatter['title'];
   entry.fields.author[currLocale] = [process.env.AUTHOR];
   entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-  entry.fields.uuid[currLocale] = frontMatter['uuid'];
+  // entry.fields.uuid[currLocale] = frontMatter['uuid'];
   await entry.update();
 }
 
@@ -234,7 +235,6 @@ const publishToCms = async () => {
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
 
-    // for update a file must have content
     if (content !== null) {
       try {
         // updates existing entry
