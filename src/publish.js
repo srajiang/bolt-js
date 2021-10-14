@@ -141,7 +141,7 @@ const getPageEntry = (path, frontMatter, body) => {
           [currLocale]: frontMatter['uuid']
         },
         order: {
-          [currLocale]: frontMatter['order']
+          [currLocale]: parseInt(frontMatter['order'])
         }
       },
       metadata: {
