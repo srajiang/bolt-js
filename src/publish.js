@@ -231,8 +231,8 @@ const updateEntryAndPublish = async (entry, frontMatter, body, path) => {
   }
   // TODO: Update once uuid is mandatory
   // entry.fields.uuid[currLocale] = frontMatter['uuid']; 
-  await entry.update();
-  await entry.publish();
+  let updated = await entry.update();
+  await updated.publish();
 }
 
 const createEntryAndPublish = async (path, frontMatter, body, refId, environ) => {
