@@ -213,7 +213,7 @@ const validateUUID = (entry, frontMatter) => {
   // }
 }
 
-const updateEntry = (entry, frontMatter, body, path) => {
+const updateEntryAndPublish = async (entry, frontMatter, body, path) => {
   if (!entry || !frontMatter) {
     throw new Error ('Missing entry or frontmatter');
   }
@@ -231,10 +231,11 @@ const updateEntry = (entry, frontMatter, body, path) => {
   }
   // TODO: Update once uuid is mandatory
   // entry.fields.uuid[currLocale] = frontMatter['uuid']; 
-  return entry.update();
+  await entry.update();
+  await entry.publish();
 }
 
-const createEntry = (path, frontMatter, body, refId, environ) => {
+const createEntryAndPublish = async (path, frontMatter, body, refId, environ) => {
   const pageEntry = getPageEntry(path, frontMatter, body);
   const entry = await environ.createEntryWithId('page', refId, pageEntry);
   await entry.publish();
@@ -260,13 +261,13 @@ const publishToCms = async () => {
         validateFrontMatter(frontMatter);
         const entry = await environ.getEntry(refId);
         validateUUID(entry, frontMatter);
-        const updated = await updateEntry(entry, frontMatter, body, path);
+        const updated = await updateEntryAndPublish(entry, frontMatter, body, path);
         log[path] = `Entry updated: ${updated.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
           // create new entry
           try {
-            await createEntry(path, frontMatter, body, refId, environ);
+            await createEntryAndPublish(path, frontMatter, body, refId, environ);
           } catch (error) {
             log[path] = error.message;
           }
