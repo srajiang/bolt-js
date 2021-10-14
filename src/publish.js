@@ -261,8 +261,8 @@ const publishToCms = async () => {
         validateFrontMatter(frontMatter);
         const entry = await environ.getEntry(refId);
         validateUUID(entry, frontMatter);
-        const updated = await updateEntryAndPublish(entry, frontMatter, body, path);
-        log[path] = `Entry updated: ${updated.sys.id}`;
+        await updateEntryAndPublish(entry, frontMatter, body, path);
+        log[path] = `Entry updated: ${entry.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
           // create new entry
