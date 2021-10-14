@@ -227,7 +227,7 @@ const updateEntryAndPublish = async (entry, frontMatter, body, path) => {
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
   // TODO: Remove this once order is handled via manifest
   if (entry.fields.order) {
-    entry.fields.order[currLocale] = frontMatter['slug'];
+    entry.fields.order[currLocale] = frontMatter['order'];
   } else {
     entry.fields.order = {
       [currLocale]: frontMatter['order']
