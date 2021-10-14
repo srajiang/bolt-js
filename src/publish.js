@@ -234,7 +234,7 @@ const updateEntry = (entry, frontMatter, body, path) => {
   return entry.update();
 }
 
-const createEntry = (path, frontMatter, body, refId) => {
+const createEntry = (path, frontMatter, body, refId, environ) => {
   const pageEntry = getPageEntry(path, frontMatter, body);
   const entry = await environ.createEntryWithId('page', refId, pageEntry);
   await entry.publish();
@@ -266,7 +266,7 @@ const publishToCms = async () => {
         if (err.name === "NotFound") {
           // create new entry
           try {
-            await createEntry(path, frontMatter, body, refId);
+            await createEntry(path, frontMatter, body, refId, environ);
           } catch (error) {
             log[path] = error.message;
           }
