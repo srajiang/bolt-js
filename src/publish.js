@@ -141,7 +141,7 @@ const getPageEntry = (path, frontMatter, body) => {
           [currLocale]: frontMatter['uuid']
         },
         order: {
-          [currLocale]: parseInt(frontMatter['order'])
+          [currLocale]: frontMatter['order']
         }
       },
       metadata: {
@@ -226,8 +226,12 @@ const updateEntryAndPublish = async (entry, frontMatter, body, path) => {
   entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
   // TODO: Remove this once order is handled via manifest
-  entry.fields.order = {
-    [currLocale]: frontMatter['order']
+  if (entry.fields.order) {
+    entry.fields.order[currLocale] = frontMatter['slug'];
+  } else {
+    entry.fields.order = {
+      [currLocale]: frontMatter['order']
+    }
   }
   if (entry.fields.slug) {
     entry.fields.slug[currLocale] = frontMatter['slug'];
