@@ -139,6 +139,9 @@ const getPageEntry = (path, frontMatter, body) => {
         },
         uuid: {
           [currLocale]: frontMatter['uuid']
+        },
+        order: {
+          [currLocale]: frontMatter['order']
         }
       },
       metadata: {
@@ -222,6 +225,10 @@ const updateEntryAndPublish = async (entry, frontMatter, body, path) => {
   entry.fields.author[currLocale] = [process.env.AUTHOR];
   entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
+  // TODO: Remove this once order is handled via manifest
+  entry.fields.order = {
+    [currLocale]: frontMatter['order']
+  }
   if (entry.fields.slug) {
     entry.fields.slug[currLocale] = frontMatter['slug'];
   } else {
