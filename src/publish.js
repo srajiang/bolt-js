@@ -82,6 +82,15 @@ const getCollectionEntry = (entry, order) => {
     fields: {
       order: order,
       title: entry
+    },
+    metadata: {
+      tags: [{
+        sys: {
+          type: 'Link',
+          linkType: 'Tag',
+          id: getSourceTag(),
+        }
+      }]
     }
   }
 }
@@ -109,10 +118,10 @@ const publishCollections = async () => {
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
     const collections = Object.keys(config['collections']);
-    
+    let collectId;
     for (let i = 0; i < collections.length; i++) {
       const order = i;
-      const collectId = collections[i];
+      collectId = collections[i];
       console.log('processing', collectId);
       const collectEntry = getCollectionEntry(collectId, order);
       const refId = formatRefId(collections[i]);
