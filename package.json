@@ -76,6 +76,7 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jsdoc": "^30.6.1",
     "eslint-plugin-node": "^11.1.0",
+    "js-yaml": "^4.1.0",
     "mocha": "^6.1.4",
     "nyc": "^14.0.0",
     "rewiremock": "^3.13.4",

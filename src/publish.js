@@ -4,6 +4,7 @@
  */
 import contentful from 'contentful-management';
 import fs from 'fs';
+import yaml from 'js-yaml';
 import marked from 'marked';
 
 // init client
@@ -19,8 +20,8 @@ const getAllPaths = () => {
 }
 
 // returns changed filepaths including docs/* only
-const getPaths = () => {
-  return process.env.FILES_CHANGED
+const getPaths = (filesChanged) => {
+  return filesChanged
   .split(' ') 
   .filter(str => /^docs\/.*/.test(str));
   // TODO: Modify based on the path provided by git actions
@@ -44,7 +45,7 @@ const readData = async (fPaths) => {
 // determines whether to fetch all file content or
 // just content from changed paths
 const getFileContent = async () => {
-  const changedPaths = getPaths();
+  const changedPaths = getPaths(process.env.FILES_CHANGED);
   let contentStore;
   if (changedPaths.length > 0) {
     // edits were made to /docs/** 
@@ -75,10 +76,16 @@ const getSourceTag = () => {
   return process.env.REPOSITORY.split('/')[1];
 }
 
-// TODO: update page manifest
-const validateAndUpdateManifest = async (changedFiles, allFiles) => {
-  // There is a manifest file. If not, error
 
+// TODO: update page manifest
+const validateAndUpdateConfig = async (changedFiles, allFiles) => {
+    // Get document, or throw exception on error
+  try {
+    const doc = yaml.load(fs.readFileSync('/docs/config.yml', 'utf8'));
+    console.log(doc);
+  } catch (e) {
+    console.log(e);
+  }
   // If manifest file is changed
     // Validate that every file listed in the manifest also exists in FS. If not, error
     // update the manifest with the new manifest
@@ -317,8 +324,9 @@ const updateTags = async () => {
 
 const publish = async () => {
   try {
-    await updateTags();
-    await publishToCms();
+    await validateAndUpdateConfig();
+    // await updateTags();
+    // await publishToCms();
   } catch (error) {
     console.log('Error processing request', error);
   }

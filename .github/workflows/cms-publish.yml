@@ -53,4 +53,5 @@ jobs:
           EVENT: ${{ toJson(github.event) }}
           FILES_CHANGED: ${{ steps.getfile.outputs.files }}
           ALL_FILES: ${{ steps.getall.outputs.files }}
+
         run: npm run publish
