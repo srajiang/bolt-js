@@ -113,12 +113,11 @@ const publishCollections = async () => {
     console.log(e);
   }
   const log = {};
-  let collectId;
-  let order;
+  const space = await client.getSpace(spaceId);
+  const environ = await space.getEnvironment(envId);
+  let collectId, order;
   // try to update first otherwise create collection entry
   try {
-    const space = await client.getSpace(spaceId);
-    const environ = await space.getEnvironment(envId);
     const collections = Object.keys(config['collections']);
     
     for (let i = 0; i < collections.length; i++) {
