@@ -97,6 +97,9 @@ const getCollectionEntry = (entry, order) => {
 const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
   console.log('updating collection entry');
   entry.fields.title = collectionContent;
+  // entry.fields.order = {
+  //   order
+  // };
   const updated = await entry.update();
   await updated.publish();
 }
@@ -123,7 +126,6 @@ const publishCollections = async () => {
       log[collectId] = `Collection entry updated: ${updated.sys.id}`;
     } catch (err) {
       if (err.name === "NotFound") {
-        console.log('creating new', collectId);
         const collectEntry = getCollectionEntry(config['collections'][collectId]);
         const entry = await environ.createEntryWithId('collection', refId, collectEntry);
         const published = await entry.publish();
@@ -133,6 +135,7 @@ const publishCollections = async () => {
       }
     }
   }
+  console.log(log);
 }
 
 // generates a reference id that corresponds to Contentful entry id
