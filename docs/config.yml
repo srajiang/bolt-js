@@ -1,30 +1,30 @@
 # lists order and title of each collection
 collections:
   # identifiers must be unique
-  - start: 
+  start: 
     en-US: Getting started
     ja-JP: Bolt 入門ガイド 
-  - reference:
+  reference:
     en-US: Reference
     ja-JP: リファレンス
-  - basic: 
+  basic: 
     en-US: Basic concepts
     ja-JP: 基本的な概念
-  - steps: 
+  steps: 
     en-US: Workflow steps
     ja-JP: ワークフローステップ
-  - advanced: 
+  advanced: 
     en-US: Advanced concepts
     ja-JP: 応用コンセプト
-  - deployments:
+  deployments:
     en-US: Deployments
     # TODO: translate
     ja-JP: Deployments
-  - tutorials:
+  tutorials:
     en-US: Tutorials
     # TODO: translate
     ja-JP: Tutorials
-  - contribute: 
+  contribute: 
     en-US: Contributing
     ja-JP: 貢献
 
