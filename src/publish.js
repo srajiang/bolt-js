@@ -95,6 +95,7 @@ const getCollectionEntry = (entry, order) => {
 }
 
 const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
+  console.log('updating collection entry');
   entry.fields.title = collectionContent;
   const updated = await entry.update();
   await updated.publish();
@@ -103,40 +104,33 @@ const updateCollectionEntryAndPublish = async (entry, order, collectionContent) 
 // TODO: update page manifest
 const publishCollections = async () => {
   console.log('inside publish collections');
-  // Get document, or throw exception on error
-  let config = {};
-  try {
-    config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
-  } catch (e) {
-    console.log(e);
-  }
+  const config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
+  
   const log = {};
   const space = await client.getSpace(spaceId);
   const environ = await space.getEnvironment(envId);
-  let collectId, order, refId, collectEntry;
+  const collections = Object.keys(config['collections']);
   // try to update first otherwise create collection entry
-  try {
-    const collections = Object.keys(config['collections']);
-    
-    for (let i = 0; i < collections.length; i++) {
-      order = i;
-      collectId = collections[i];
-      console.log('processing', collectId, config['collections'][collectId]);
-      refId = formatRefId(collections[i]);
+  
+  for (let i = 0; i < collections.length; i++) {
+    const order = i;
+    const collectId = collections[i];
+    const refId = formatRefId(collections[i]);
+    try {
       const entry = await environ.getEntry(refId);
-      let updated = await updateCollectionEntryAndPublish(entry, order, config['collections'][collectId]);
+      console.log('found entry', entry);
+      const updated = await updateCollectionEntryAndPublish(entry, order, config['collections'][collectId]);
       log[collectId] = `Collection entry updated: ${updated.sys.id}`;
-    }
-  } catch (err) {
-    if (err.name === "NotFound") {
-      console.log('creating new', collectId);
-      collectEntry = getCollectionEntry(config['collections'][collectId]);
-      const entry = await environ.createEntryWithId('collection', refId, collectEntry);
-      const published = await entry.publish();
-      log[collectId] = `Collection entry created: ${published.sys.id}`;
-    } else {
-      log[collectId] = err;
-    }
+    } catch (err) {
+      if (err.name === "NotFound") {
+        console.log('creating new', collectId);
+        const collectEntry = getCollectionEntry(config['collections'][collectId]);
+        const entry = await environ.createEntryWithId('collection', refId, collectEntry);
+        const published = await entry.publish();
+        log[collectId] = `Collection entry created: ${published.sys.id}`;
+      } else {
+        log[collectId] = err;
+      }
   }
 }
 
