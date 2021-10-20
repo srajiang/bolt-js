@@ -111,9 +111,9 @@ const publishCollections = async () => {
     const collections = Object.keys(config['collections']);
     
     for (let i = 0; i < collections.length; i++) {
-      console.log('processing', collectId);
       const order = i;
       const collectId = collections[i];
+      console.log('processing', collectId);
       const collectEntry = getCollectionEntry(collectId, order);
       const refId = formatRefId(collections[i]);
       const entry = await environ.getEntry(refId);
