@@ -115,7 +115,7 @@ const publishCollections = async () => {
   for (let i = 0; i < collections.length; i++) {
     const order = i;
     const collectId = collections[i];
-    const refId = formatRefId(collections[i]);
+    const refId = formatRefId(collections[i], 'collection');
     try {
       const entry = await environ.getEntry(refId);
       console.log('found entry', entry);
@@ -135,13 +135,13 @@ const publishCollections = async () => {
 }
 
 // generates a reference id that corresponds to Contentful entry id
-const formatRefId = (id) => {
+const formatRefId = (id, entryType) => {
   let refId;
   /**
    * generates a ref id in the following format:
-   * <org>_<repo>_<slug>
+   * <org>_<repo>_<slug>_<entrytype>
    * */
-  refId = `${process.env.REPOSITORY}_${id}`;
+  refId = `${process.env.REPOSITORY}_${id}_${entryType}`;
   return refId.replaceAll('/', '_'); 
 }
 
@@ -310,7 +310,7 @@ const publishPages = async () => {
   for (const path of fPaths) {
     const content = fileContentStore[path];
     const { frontMatter, body } = parse(content);
-    const refId = formatRefId(frontMatter['slug']);
+    const refId = formatRefId(frontMatter['slug'], 'page');
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
     if (content !== null) {
