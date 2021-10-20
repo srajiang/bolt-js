@@ -118,23 +118,23 @@ const publishCollections = async () => {
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
     const collections = Object.keys(config['collections']);
-    let collectId;
+    let collectId, order;
     for (let i = 0; i < collections.length; i++) {
-      const order = i;
+      order = i;
       collectId = collections[i];
       console.log('processing', collectId);
       const collectEntry = getCollectionEntry(collectId, order);
       const refId = formatRefId(collections[i]);
       const entry = await environ.getEntry(refId);
       let updated = await updateCollectionEntryAndPublish(entry, order, collectEntry);
-      log[collectId] = `Collection entry updated: ${updated.sys.id}`
+      log[collectId] = `Collection entry updated: ${updated.sys.id}`;
     }
   } catch (err) {
     if (err.name === "NotFound") {
       const collectEntry = getCollectionEntry(collectId, order);
       const entry = await environ.createEntryWithId('collection', refId, collectEntry);
       const published = await entry.publish();
-      log[collectId] = `Collection entry created: ${published.sys.id}`
+      log[collectId] = `Collection entry created: ${published.sys.id}`;
     } else {
       log[collectId] = err;
     }
