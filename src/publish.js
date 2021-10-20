@@ -115,7 +115,7 @@ const publishCollections = async () => {
   const log = {};
   const space = await client.getSpace(spaceId);
   const environ = await space.getEnvironment(envId);
-  let collectId, order;
+  let collectId, order, refId, collectEntry;
   // try to update first otherwise create collection entry
   try {
     const collections = Object.keys(config['collections']);
@@ -124,8 +124,8 @@ const publishCollections = async () => {
       order = i;
       collectId = collections[i];
       console.log('processing', collectId);
-      const collectEntry = getCollectionEntry(collectId, order);
-      const refId = formatRefId(collections[i]);
+      collectEntry = getCollectionEntry(collectId, order);
+      refId = formatRefId(collections[i]);
       const entry = await environ.getEntry(refId);
       let updated = await updateCollectionEntryAndPublish(entry, order, collectEntry);
       log[collectId] = `Collection entry updated: ${updated.sys.id}`;
@@ -133,7 +133,6 @@ const publishCollections = async () => {
   } catch (err) {
     if (err.name === "NotFound") {
       console.log('creating new', collectId);
-      const collectEntry = getCollectionEntry(collectId, order);
       const entry = await environ.createEntryWithId('collection', refId, collectEntry);
       const published = await entry.publish();
       log[collectId] = `Collection entry created: ${published.sys.id}`;
