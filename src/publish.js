@@ -121,7 +121,7 @@ const publishCollections = async () => {
     for (let i = 0; i < collections.length; i++) {
       order = i;
       collectId = collections[i];
-      console.log('processing', collectId);
+      console.log('processing', collectId, config['collections'][collectId]);
       refId = formatRefId(collections[i]);
       const entry = await environ.getEntry(refId);
       let updated = await updateCollectionEntryAndPublish(entry, order, config['collections'][collectId]);
@@ -130,6 +130,7 @@ const publishCollections = async () => {
   } catch (err) {
     if (err.name === "NotFound") {
       console.log('creating new', collectId);
+      collectEntry = getCollectionEntry(config['collections'][collectId]);
       const entry = await environ.createEntryWithId('collection', refId, collectEntry);
       const published = await entry.publish();
       log[collectId] = `Collection entry created: ${published.sys.id}`;
