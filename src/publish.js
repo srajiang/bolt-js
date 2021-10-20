@@ -131,6 +131,7 @@ const publishCollections = async () => {
       } else {
         log[collectId] = err;
       }
+    }
   }
 }
 
