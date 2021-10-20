@@ -76,32 +76,70 @@ const getSourceTag = () => {
   return process.env.REPOSITORY.split('/')[1];
 }
 
+// get collection entry
+const getCollectionEntry = (entry, order) => {
+  return {
+    fields: {
+      order: order,
+      title: entry
+    }
+  }
+}
+
+const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
+  entry.fields.order = order;
+  entry.fields.title = collectionContent;
+  const updated = await entry.update();
+  await updated.publish();
+}
 
 // TODO: update page manifest
-const validateAndUpdateConfig = async (changedFiles, allFiles) => {
-    // Get document, or throw exception on error
+const publishCollections = async () => {
+  console.log('inside publish collections');
+  // Get document, or throw exception on error
+  let config = {};
   try {
-    const doc = yaml.load(fs.readFileSync('docs/config.yml', 'utf8'));
-    console.log(doc);
+    config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
   } catch (e) {
     console.log(e);
   }
-  // If manifest file is changed
-    // Validate that every file listed in the manifest also exists in FS. If not, error
-    // update the manifest with the new manifest
-  
-  // If manifest file is unchanged
-    // Confirm every file in listed in manifest also exists in fs. If not, error  
+  const log = {};
+  // try to update first otherwise create collection entry
+  try {
+    const space = await client.getSpace(spaceId);
+    const environ = await space.getEnvironment(envId);
+    const collections = Object.keys(config['collections']);
+    
+    for (let i = 0; i < collections.length; i++) {
+      console.log('processing', collectId);
+      const order = i;
+      const collectId = collections[i];
+      const collectEntry = getCollectionEntry(collectId, order);
+      const refId = formatRefId(collections[i]);
+      const entry = await environ.getEntry(refId);
+      let updated = await updateCollectionEntryAndPublish(entry, order, collectEntry);
+      log[collectId] = `Collection entry updated: ${updated.sys.id}`
+    }
+  } catch (err) {
+    if (err.name === "NotFound") {
+      const collectEntry = getCollectionEntry(collectId, order);
+      const entry = await environ.createEntryWithId('collection', refId, collectEntry);
+      const published = await entry.publish();
+      log[collectId] = `Collection entry created: ${published.sys.id}`
+    } else {
+      log[collectId] = err;
+    }
+  }
 }
 
 // generates a reference id that corresponds to Contentful entry id
-const formatRefId = (frontMatter) => {
+const formatRefId = (id) => {
   let refId;
   /**
    * generates a ref id in the following format:
    * <org>_<repo>_<slug>
    * */
-  refId = `${process.env.REPOSITORY}_${frontMatter.slug}`;
+  refId = `${process.env.REPOSITORY}_${id}`;
   return refId.replaceAll('/', '_'); 
 }
 
@@ -223,7 +261,7 @@ const validateUUID = (entry, frontMatter) => {
   // }
 }
 
-const updateEntryAndPublish = async (entry, frontMatter, body, path) => {
+const updatePageEntryAndPublish = async (entry, frontMatter, body, path) => {
   if (!entry || !frontMatter) {
     throw new Error ('Missing entry or frontmatter');
   }
@@ -253,7 +291,7 @@ const updateEntryAndPublish = async (entry, frontMatter, body, path) => {
   await updated.publish();
 }
 
-const createEntryAndPublish = async (path, frontMatter, body, refId, environ) => {
+const createPageEntryAndPublish = async (path, frontMatter, body, refId, environ) => {
   const pageEntry = getPageEntry(path, frontMatter, body);
   const entry = await environ.createEntryWithId('page', refId, pageEntry);
   await entry.publish();
@@ -261,7 +299,7 @@ const createEntryAndPublish = async (path, frontMatter, body, refId, environ) =>
 }
 
 // primary function to create, update, entries
-const publishToCms = async () => {
+const publishPages = async () => {
   const fileContentStore = await getFileContent();
   const fPaths = Object.keys(fileContentStore);
   const log = {};
@@ -270,7 +308,7 @@ const publishToCms = async () => {
   for (const path of fPaths) {
     const content = fileContentStore[path];
     const { frontMatter, body } = parse(content);
-    const refId = formatRefId(frontMatter);
+    const refId = formatRefId(frontMatter['slug']);
     const space = await client.getSpace(spaceId);
     const environ = await space.getEnvironment(envId);
     if (content !== null) {
@@ -279,13 +317,13 @@ const publishToCms = async () => {
         validateFrontMatter(frontMatter);
         const entry = await environ.getEntry(refId);
         validateUUID(entry, frontMatter);
-        await updateEntryAndPublish(entry, frontMatter, body, path);
-        log[path] = `Entry updated: ${entry.sys.id}`;
+        await updatePageEntryAndPublish(entry, frontMatter, body, path);
+        log[path] = `Page entry updated: ${entry.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
           // create new entry
           try {
-            await createEntryAndPublish(path, frontMatter, body, refId, environ);
+            await createPageEntryAndPublish(path, frontMatter, body, refId, environ);
           } catch (error) {
             log[path] = error.message;
           }
@@ -324,9 +362,9 @@ const updateTags = async () => {
 
 const publish = async () => {
   try {
-    await validateAndUpdateConfig();
+    await publishCollections();
     // await updateTags();
-    // await publishToCms();
+    // await publishPages();
   } catch (error) {
     console.log('Error processing request', error);
   }
