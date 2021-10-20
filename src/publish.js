@@ -80,8 +80,7 @@ const getSourceTag = () => {
 const getCollectionEntry = (entry, order) => {
   return {
     fields: {
-      order: order,
-      title: entry
+      title: entry,
     },
     metadata: {
       tags: [{
@@ -96,7 +95,6 @@ const getCollectionEntry = (entry, order) => {
 }
 
 const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
-  entry.fields.order = order;
   entry.fields.title = collectionContent;
   const updated = await entry.update();
   await updated.publish();
@@ -124,10 +122,9 @@ const publishCollections = async () => {
       order = i;
       collectId = collections[i];
       console.log('processing', collectId);
-      collectEntry = getCollectionEntry(collectId, order);
       refId = formatRefId(collections[i]);
       const entry = await environ.getEntry(refId);
-      let updated = await updateCollectionEntryAndPublish(entry, order, collectEntry);
+      let updated = await updateCollectionEntryAndPublish(entry, order, config['collections'][collectId]);
       log[collectId] = `Collection entry updated: ${updated.sys.id}`;
     }
   } catch (err) {
