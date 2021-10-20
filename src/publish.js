@@ -81,7 +81,7 @@ const getSourceTag = () => {
 const validateAndUpdateConfig = async (changedFiles, allFiles) => {
     // Get document, or throw exception on error
   try {
-    const doc = yaml.load(fs.readFileSync('/docs/config.yml', 'utf8'));
+    const doc = yaml.load(fs.readFileSync('docs/config.yml', 'utf8'));
     console.log(doc);
   } catch (e) {
     console.log(e);
