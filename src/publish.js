@@ -101,8 +101,8 @@ const getCollectionEntry = (entry, order) => {
 const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
   entry.fields.title = collectionContent;
   entry.fields.order = {
-    "en-US": order,
-    "ja-JP": order, 
+    "en-US": order.toString(),
+    "ja-JP": order.toString(), 
   };
   const updated = await entry.update();
   await updated.publish();
