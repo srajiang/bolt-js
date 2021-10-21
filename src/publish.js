@@ -95,11 +95,10 @@ const getCollectionEntry = (entry, order) => {
 }
 
 const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
-  console.log('updating collection entry');
   entry.fields.title = collectionContent;
-  // entry.fields.order = {
-  //   order
-  // };
+  entry.fields.order = {
+    order
+  };
   const updated = await entry.update();
   await updated.publish();
 }
@@ -121,8 +120,8 @@ const publishCollections = async () => {
     const refId = formatRefId(collections[i], 'collection');
     try {
       const entry = await environ.getEntry(refId);
-      const updated = await updateCollectionEntryAndPublish(entry, order, config['collections'][collectId]);
-      log[collectId] = `Collection entry updated: ${updated.sys.id}`;
+      await updateCollectionEntryAndPublish(entry, order, config['collections'][collectId]);
+      log[collectId] = `Collection entry updated: ${entry.sys.id}`;
     } catch (err) {
       if (err.name === "NotFound") {
         const collectEntry = getCollectionEntry(config['collections'][collectId]);
@@ -379,6 +378,8 @@ publish();
 /* 
 
 TODO
+- 
+- can create a new Collection ✅ (with all the fields)
 - can create a new Page ✅
 - can delete an existing Page ✅
 - can update an existing Page ✅
@@ -409,9 +410,6 @@ Docs
   - Changing the name of a article, - update the title field (should match the filename)
   
 - Notes 
-    - Anytime there are new documentations to add in different supported languages, the supported languages need to be updated
-- Publishing
-  - yml
-  - get all files step should accept a path in the config that contains the path to search within
+    - If there are documentations to add in different supported languages, the supported languages need to be updated in the map. 
   - 
 */
