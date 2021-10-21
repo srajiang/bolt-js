@@ -81,6 +81,10 @@ const getCollectionEntry = (entry, order) => {
   return {
     fields: {
       title: entry,
+      order: {
+        "en-US": order,
+        "ja-JP": order, 
+      }
     },
     metadata: {
       tags: [{
@@ -97,7 +101,8 @@ const getCollectionEntry = (entry, order) => {
 const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
   entry.fields.title = collectionContent;
   entry.fields.order = {
-    order
+    "en-US": order,
+    "ja-JP": order, 
   };
   const updated = await entry.update();
   await updated.publish();
