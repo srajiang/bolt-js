@@ -64,7 +64,7 @@ const hasFrontMatter = (lexed) => {
 
 // checks for required fields and returns missing
 const getMissingFields = (frontMatter) => {
-  let required = ['slug', 'title', 'lang'] // TODO: Add uuid
+  let required = ['slug', 'title', 'lang'];
   return required.filter(field => {
     return (frontMatter[field] === undefined || frontMatter[field] === '');
   })
@@ -211,6 +211,9 @@ const formatPage = (path, frontMatter, body) => {
         uuid: {
           [currLocale]: frontMatter['uuid']
         },
+        sha: {
+          "en-US": process.env.SHA
+        }
       },
       metadata: {
         tags: [{
@@ -268,21 +271,6 @@ const validateFrontMatter = (frontMatter) => {
   if (frontMatter['slug'].match(/[_/*.!]+/) !== null) {
     throw new Error(`Slug contains invalid special character. Slugs should contain hyphens only, e.g. example-doc-name.md`);
   }
-}
-
-// TODO: To remove this unnecessary function
-// checks that a uuid exists and is being added
-const validateUUID = (entry, frontMatter) => {
-  let localizedUUID = entry.fields.uuid ? entry.fields.uuid[currLocale]: null;
-  // provided uuid does not matching existing uuid field in the entry
-  if (localizedUUID && localizedUUID !== frontMatter['uuid']) {
-   throw new Error('Attempted to update entry whose uuid does not match provided uuid') 
-  } 
-  // no uuid in existing entry and no uuid 
-  // TODO: Enable these lines
-  // if (!localizedUUID && (!frontMatter['uuid'] || !frontMatter['uuid' === ''])) {
-  //   throw new Error('Please provide a uuid in the front matter')
-  // }
 }
 
 const updatePageAndPublish = async (entry, frontMatter, body, path) => {
