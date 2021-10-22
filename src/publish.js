@@ -7,7 +7,6 @@ import fs from 'fs';
 import yaml from 'js-yaml';
 import marked from 'marked';
 
-// init client
 const spaceId = 'lfws4sw3zx32';
 const envId = 'master';
 const client = contentful.createClient({
@@ -28,7 +27,7 @@ const getPaths = (filesChanged) => {
 }
 
 // accepts an array of paths and returns an object where
-// key is filepath and value is the associated file data
+// key is filepath and value is the file data
 const readData = async (fPaths) => {
   let fileData = {};
   for (const path of fPaths) {
@@ -42,8 +41,7 @@ const readData = async (fPaths) => {
   return fileData;
 }
 
-// determines whether to fetch all file content or
-// just content from changed paths
+// determines whether to fetch all file content or content from changed paths
 const getFileContent = async () => {
   const changedPaths = getPaths(process.env.FILES_CHANGED);
   let contentStore;
@@ -58,7 +56,7 @@ const getFileContent = async () => {
   return contentStore;
 }
 
-// returns true if the document has horizontal rule delineated front matter
+// return true if the document has horizontal rule delineated front matter
 const hasFrontMatter = (lexed) => {
   return ((lexed)[0] && lexed[2] && lexed[0]["type"] === TYPES.hr && (lexed[2]["type"] === TYPES.hr || lexed[3]["type"] === TYPES.hr));
 }
@@ -76,14 +74,33 @@ const getSourceTag = () => {
   return process.env.REPOSITORY.split('/')[1];
 }
 
+// returns formatted list of linked pages to a particular collection
+const getPageLinks = (collectId, config) => {
+  const contents = config.contents;
+  const linkedSlugsArray = contents[collectId];
+  return linkedSlugsArray.map(slug => {
+    return {
+      sys: {
+        type: "Link",
+        linkType: "Entry",
+        id: formatRefId(slug)
+      }
+    }
+  })
+}
+
 // get collection entry
-const getCollectionEntry = (entry, order) => {
+const formatCollection = (collectId, order, entry) => {
+  const pageLinks = getPageLinks(collectId);
   return {
     fields: {
       title: entry,
       order: {
         "en-US": order,
         "ja-JP": order, 
+      },
+      pages: {
+        "en-US": pageLinks,
       }
     },
     metadata: {
@@ -98,7 +115,7 @@ const getCollectionEntry = (entry, order) => {
   }
 }
 
-const updateCollectionEntryAndPublish = async (entry, order, collectionContent) => {
+const updateCollectionAndPublish = async (entry, order, collectionContent) => {
   entry.fields.title = collectionContent;
   entry.fields.order = {
     "en-US": order.toString(),
@@ -108,37 +125,34 @@ const updateCollectionEntryAndPublish = async (entry, order, collectionContent) 
   await updated.publish();
 }
 
-// TODO: update page manifest
 const publishCollections = async () => {
-  console.log('inside publish collections');
   const config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
+  console.log(config);
+  // const log = {};
+  // const space = await client.getSpace(spaceId);
+  // const environ = await space.getEnvironment(envId);
+  // const collections = Object.keys(config['collections']);
   
-  const log = {};
-  const space = await client.getSpace(spaceId);
-  const environ = await space.getEnvironment(envId);
-  const collections = Object.keys(config['collections']);
-  // try to update first otherwise create collection entry
-  
-  for (let i = 0; i < collections.length; i++) {
-    const order = i;
-    const collectId = collections[i];
-    const refId = formatRefId(collections[i], 'collection');
-    try {
-      const entry = await environ.getEntry(refId);
-      await updateCollectionEntryAndPublish(entry, order, config['collections'][collectId]);
-      log[collectId] = `Collection entry updated: ${entry.sys.id}`;
-    } catch (err) {
-      if (err.name === "NotFound") {
-        const collectEntry = getCollectionEntry(config['collections'][collectId]);
-        const entry = await environ.createEntryWithId('collection', refId, collectEntry);
-        await entry.publish();
-        log[collectId] = `Collection entry created: ${entry.sys.id}`;
-      } else {
-        log[collectId] = err;
-      }
-    }
-  }
-  console.log(log);
+  // for (let i = 0; i < collections.length; i++) {
+  //   const order = i;
+  //   const collectId = collections[i];
+  //   const refId = formatRefId(collections[i], 'collection');
+  //   try {
+  //     const entry = await environ.getEntry(refId);
+  //     await updateCollectionAndPublish(entry, order, config['collections'][collectId]);
+  //     log[collectId] = `Collection entry updated: ${entry.sys.id}`;
+  //   } catch (err) {
+  //     if (err.name === "NotFound") {
+  //       const collectEntry = formatCollection(collectId, order, config['collections'][collectId]);
+  //       const entry = await environ.createEntryWithId('collection', refId, collectEntry);
+  //       await entry.publish();
+  //       log[collectId] = `Collection entry created: ${entry.sys.id}`;
+  //     } else {
+  //       log[collectId] = err;
+  //     }
+  //   }
+  // }
+  // console.log(log);
 }
 
 // generates a reference id that corresponds to Contentful entry id
@@ -146,9 +160,9 @@ const formatRefId = (id, entryType) => {
   let refId;
   /**
    * generates a ref id in the following format:
-   * <org>_<repo>_<slug>_<entrytype>
+   * <org>_<repo>_<entrytype>_<slug>
    * */
-  refId = `${process.env.REPOSITORY}_${id}_${entryType}`;
+  refId = `${process.env.REPOSITORY}_${entryType}_${id}`;
   return refId.replaceAll('/', '_'); 
 }
 
@@ -170,7 +184,7 @@ const getLocale = (lang) => {
 }
 
 // formats a new page entry
-const getPageEntry = (path, frontMatter, body) => {
+const formatPage = (path, frontMatter, body) => {
   let currLocale = getLocale(frontMatter['lang']);
   // must have a valid locale
   if (currLocale) {
@@ -256,6 +270,7 @@ const validateFrontMatter = (frontMatter) => {
   }
 }
 
+// TODO: To remove this unnecessary function
 // checks that a uuid exists and is being added
 const validateUUID = (entry, frontMatter) => {
   let localizedUUID = entry.fields.uuid ? entry.fields.uuid[currLocale]: null;
@@ -270,7 +285,7 @@ const validateUUID = (entry, frontMatter) => {
   // }
 }
 
-const updatePageEntryAndPublish = async (entry, frontMatter, body, path) => {
+const updatePageAndPublish = async (entry, frontMatter, body, path) => {
   if (!entry || !frontMatter) {
     throw new Error ('Missing entry or frontmatter');
   }
@@ -294,14 +309,12 @@ const updatePageEntryAndPublish = async (entry, frontMatter, body, path) => {
       [currLocale]: frontMatter['slug']
     };
   }
-  // TODO: Update once uuid is mandatory
-  // entry.fields.uuid[currLocale] = frontMatter['uuid']; 
   let updated = await entry.update();
   await updated.publish();
 }
 
 const createPageEntryAndPublish = async (path, frontMatter, body, refId, environ) => {
-  const pageEntry = getPageEntry(path, frontMatter, body);
+  const pageEntry = formatPage(path, frontMatter, body);
   const entry = await environ.createEntryWithId('page', refId, pageEntry);
   await entry.publish();
   return entry;
@@ -325,8 +338,7 @@ const publishPages = async () => {
         // updates existing entry
         validateFrontMatter(frontMatter);
         const entry = await environ.getEntry(refId);
-        validateUUID(entry, frontMatter);
-        await updatePageEntryAndPublish(entry, frontMatter, body, path);
+        await updatePageAndPublish(entry, frontMatter, body, path);
         log[path] = `Page entry updated: ${entry.sys.id}`;
       } catch (err) {
         if (err.name === "NotFound") {
@@ -371,9 +383,9 @@ const updateTags = async () => {
 
 const publish = async () => {
   try {
-    await publishCollections();
     // await updateTags();
     // await publishPages();
+    await publishCollections();
   } catch (error) {
     console.log('Error processing request', error);
   }
@@ -382,25 +394,18 @@ const publish = async () => {
 publish();
 /* 
 
-TODO
-- 
-- can create a new Collection ✅ (with all the fields)
-- can create a new Page ✅
-- can delete an existing Page ✅
-- can update an existing Page ✅
-- add validation of front matter ✅
-- Add simple activity logging ✅
-- 👀 using slug from front-matter for unique identifier ✅ 
-- can pull locale field from the front-matter ✅
-- can add both english and japanese example at the same time ✅
-- can create, update i.e. handle a JP language Page ✅
-- can update Author(s) field with the full list of authors for a file 💡
-- Includes a tag field with the repo ✅
-- More robust front matter handling ✅ 
-- Could handle asset upload to contentful? 
+October Sprint
+- Fix regex that strips front matter
+- Add Page links to Collections
+- Add commit SHA as unique identifier for Pages + Collections
+- Correct order field in Pages + Collections to number and make the source
+
+Debrief Items
+- Github Actions Publish + convert repos into consumer repos
+- Handling asset upload to contentful (haven't dealt with this yet)
+- Handling module subreference - Python
 - Make logging better with summary stats for easy review and coded errors
-- Add a testing suite for this function
-- Make activity logging accessible to other github actions
+- Tests!
 
 Docs
 - All docs are required to have frontmatter: at least lang, title, slug (must be unique) in the proper format ✅

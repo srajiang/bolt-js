@@ -1,74 +1,76 @@
-# lists order and title of each collection
+# lists each collection in order they should appear
 collections:
-  # identifiers must be unique
-  start: 
-    en-US: Getting started
-    ja-JP: Bolt 入門ガイド 
-  reference:
-    en-US: Reference
-    ja-JP: リファレンス
-  basic: 
-    en-US: Basic concepts
-    ja-JP: 基本的な概念
-  steps: 
-    en-US: Workflow steps
-    ja-JP: ワークフローステップ
-  advanced: 
-    en-US: Advanced concepts
-    ja-JP: 応用コンセプト
-  deployments:
-    en-US: Deployments
-    # TODO: translate
-    ja-JP: Deployments
-  tutorials:
-    en-US: Tutorials
-    # TODO: translate
-    ja-JP: Tutorials
-  contribute: 
-    en-US: Contributing
-    ja-JP: 貢献
-
-# lists entry slugs belonging to each collection
-contents:
-  start:
-    - getting-started
-  reference:
-    - reference
-  basic:
-    - message-listening
-    - message-sending
-    - event-listening
-    - web-api
-    - action-listening
-    - action-respond
-    - acknowledge
-    - shortcuts
-    - commands
-    - creating-modals
-    - updating-pushing-views
-    - view-submissions
-    - publishing-views
-    - options
-    - authenticating-oauth
-    - socket-mode
-  steps:
-    - creating-steps
-    - adding-editing-steps
-    - saving-steps
-    - executing-steps
-  advanced:
-    - error-handling
-    - authorization
-    - token-rotation
-    - conversation-store
-    - global-middleware
-    - listener-middleware
-    - context
-    - logging
-    - receiver
-    - custom-routes
-  deployments: 
-    - aws-lambda
-    - heroku
-  
-
+    getting-started:
+      title:
+        en-US: Getting started
+        ja-JP: Bolt 入門ガイド
+    reference:
+      title:
+        en-US: Reference
+        ja-JP: リファレンス
+    basic: 
+      title:
+        en-US: Basic concepts
+        ja-JP: 基本的な概念
+      slugs:
+        - message-listening
+        - message-sending
+        - event-listening
+        - web-api
+        - action-listening
+        - action-respond
+        - acknowledge
+        - shortcuts
+        - commands
+        - creating-modals
+        - updating-pushing-views
+        - view-submissions
+        - publishing-views
+        - options
+        - authenticating-oauth
+        - socket-mode
+      url: concepts
+    steps: 
+      title:
+        en-US: Workflow steps
+        ja-JP: ワークフローステップ
+      slugs:
+        - creating-steps
+        - adding-editing-steps
+        - saving-steps
+        - executing-steps
+      url: concepts
+    advanced: 
+      title:
+        en-US: Advanced concepts
+        ja-JP: 応用コンセプト
+      slugs:
+        - error-handling
+        - authorization
+        - token-rotation
+        - conversation-store
+        - global-middleware
+        - listener-middleware
+        - context
+        - logging
+        - receiver
+        - custom-routes
+      url: concepts
+    deployments:
+      title:
+        en-US: Deployments
+        # TODO: translate
+        ja-JP: Deployments
+      slugs:
+        - aws-lambda
+        - heroku
+    tutorials:
+      title:
+        en-US: # no header
+        ja-JP: # no header
+      slugs:
+        - getting-started-http
+        - hubot-migration
+        - migration-v2
+        - migration-v3
+        - using-typescript         
