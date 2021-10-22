@@ -76,8 +76,8 @@ const getSourceTag = () => {
 }
 
 // returns formatted list of linked pages to a particular collection
-const getPageLinks = (collectId, content) => {
-  const linkedSlugsArray = content[collectId]['slugs'] ?? [];
+const getPageLinks = (content) => {
+  const linkedSlugsArray = content['slugs'] ? content['slugs'] : [];
   return linkedSlugsArray.map(slug => {
     return {
       sys: {
@@ -90,8 +90,8 @@ const getPageLinks = (collectId, content) => {
 }
 
 // get collection entry
-const formatCollection = (collectId, order, content) => {
-  const pageLinks = getPageLinks(collectId, content);
+const formatCollection = (order, content) => {
+  const pageLinks = getPageLinks(content);
   return {
     fields: {
       title: content['title'],
@@ -129,13 +129,13 @@ const publishCollections = async () => {
   logger['collections'] = {};
   log = logger['collections'];
 
-  const 
   // TODO: Path to config should be passed in from Git Action
   const config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
   const collections = Object.keys(config);
   const space = await client.getSpace(spaceId);
   const environ = await space.getEnvironment(envId);
   
+  // update or create collections
   for (let i = 0; i < collections.length; i++) {
     const order = i;
     const collectId = collections[i];
@@ -147,7 +147,7 @@ const publishCollections = async () => {
       log[collectId] = `Collection entry updated: ${collection.sys.id}`;
     } catch (err) {
       if (err.name === "NotFound") {
-        const formatted = formatCollection(collectId, order, content);
+        const formatted = formatCollection(order, content);
         const newCollection = await environ.createEntryWithId('collection', refId, formatted);
         await newCollection.publish();
         log[collectId] = `Collection entry created: ${collection.sys.id}`;
@@ -156,6 +156,9 @@ const publishCollections = async () => {
       }
     }
   }
+
+  // update Page entry orders based on content
+  // get all entries of type page where the tag is bolt-js
 }
 
 // generates a reference id that corresponds to Contentful entry id
@@ -273,17 +276,25 @@ const validateFrontMatter = (frontMatter) => {
   }
 }
 
-const updatePageAndPublish = async (entry, frontMatter, body, path) => {
-  if (!entry || !frontMatter) {
-    throw new Error ('Missing entry or frontmatter');
+const updatePageAndPublish = async (page, frontMatter, body, path) => {
+  if (!page || !frontMatter) {
+    throw new Error ('Missing page entry or frontmatter');
   }
   let currLocale = getLocale(frontMatter['lang']);
-  entry.fields.title[currLocale] = frontMatter['title'];
-  entry.fields.author[currLocale] = [process.env.AUTHOR];
-  entry.fields.markdown[currLocale] = body;
-  entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-  entry.fields.slug[currLocale] = frontMatter['slug'];
-  let updated = await entry.update();
+  page.fields.title[currLocale] = frontMatter['title'];
+  page.fields.author[currLocale] = [process.env.AUTHOR];
+  page.fields.markdown[currLocale] = body;
+  page.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
+  page.fields.slug[currLocale] = frontMatter['slug'];
+  let updated = await page.update();
+  await updated.publish();
+}
+
+const setPageOrderAndPublish = async (page, order) => {
+  page.fields.order = {
+    "en-US": order
+  }
+  let updated = await page.update();
   await updated.publish();
 }
 
