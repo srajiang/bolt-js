@@ -7,6 +7,7 @@ import fs from 'fs';
 import yaml from 'js-yaml';
 import marked from 'marked';
 
+const logger = {};
 const spaceId = 'lfws4sw3zx32';
 const envId = 'master';
 const client = contentful.createClient({
@@ -75,9 +76,8 @@ const getSourceTag = () => {
 }
 
 // returns formatted list of linked pages to a particular collection
-const getPageLinks = (collectId, config) => {
-  const contents = config.contents;
-  const linkedSlugsArray = contents[collectId];
+const getPageLinks = (collectId, content) => {
+  const linkedSlugsArray = content[collectId]['slugs'] ?? [];
   return linkedSlugsArray.map(slug => {
     return {
       sys: {
@@ -90,14 +90,13 @@ const getPageLinks = (collectId, config) => {
 }
 
 // get collection entry
-const formatCollection = (collectId, order, entry) => {
-  const pageLinks = getPageLinks(collectId);
+const formatCollection = (collectId, order, content) => {
+  const pageLinks = getPageLinks(collectId, content);
   return {
     fields: {
-      title: entry,
+      title: content['title'],
       order: {
         "en-US": order,
-        "ja-JP": order, 
       },
       pages: {
         "en-US": pageLinks,
@@ -126,33 +125,37 @@ const updateCollectionAndPublish = async (entry, order, collectionContent) => {
 }
 
 const publishCollections = async () => {
+  // set up log
+  logger['collections'] = {};
+  log = logger['collections'];
+
+  const 
+  // TODO: Path to config should be passed in from Git Action
   const config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
-  console.log(config);
-  // const log = {};
-  // const space = await client.getSpace(spaceId);
-  // const environ = await space.getEnvironment(envId);
-  // const collections = Object.keys(config['collections']);
+  const collections = Object.keys(config);
+  const space = await client.getSpace(spaceId);
+  const environ = await space.getEnvironment(envId);
   
-  // for (let i = 0; i < collections.length; i++) {
-  //   const order = i;
-  //   const collectId = collections[i];
-  //   const refId = formatRefId(collections[i], 'collection');
-  //   try {
-  //     const entry = await environ.getEntry(refId);
-  //     await updateCollectionAndPublish(entry, order, config['collections'][collectId]);
-  //     log[collectId] = `Collection entry updated: ${entry.sys.id}`;
-  //   } catch (err) {
-  //     if (err.name === "NotFound") {
-  //       const collectEntry = formatCollection(collectId, order, config['collections'][collectId]);
-  //       const entry = await environ.createEntryWithId('collection', refId, collectEntry);
-  //       await entry.publish();
-  //       log[collectId] = `Collection entry created: ${entry.sys.id}`;
-  //     } else {
-  //       log[collectId] = err;
-  //     }
-  //   }
-  // }
-  // console.log(log);
+  for (let i = 0; i < collections.length; i++) {
+    const order = i;
+    const collectId = collections[i];
+    const content = config[collectId];
+    const refId = formatRefId(collections[i], 'collection');
+    try {
+      const currCollection = await environ.getEntry(refId);
+      await updateCollectionAndPublish(currCollection, order, content);
+      log[collectId] = `Collection entry updated: ${collection.sys.id}`;
+    } catch (err) {
+      if (err.name === "NotFound") {
+        const formatted = formatCollection(collectId, order, content);
+        const newCollection = await environ.createEntryWithId('collection', refId, formatted);
+        await newCollection.publish();
+        log[collectId] = `Collection entry created: ${collection.sys.id}`;
+      } else {
+        log[collectId] = err;
+      }
+    }
+  }
 }
 
 // generates a reference id that corresponds to Contentful entry id
@@ -208,9 +211,6 @@ const formatPage = (path, frontMatter, body) => {
         uuid: {
           [currLocale]: frontMatter['uuid']
         },
-        order: {
-          [currLocale]: frontMatter['order']
-        }
       },
       metadata: {
         tags: [{
@@ -294,21 +294,7 @@ const updatePageAndPublish = async (entry, frontMatter, body, path) => {
   entry.fields.author[currLocale] = [process.env.AUTHOR];
   entry.fields.markdown[currLocale] = body;
   entry.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-  // TODO: Remove this once order is handled via manifest
-  if (entry.fields.order) {
-    entry.fields.order[currLocale] = frontMatter['order'];
-  } else {
-    entry.fields.order = {
-      [currLocale]: frontMatter['order']
-    }
-  }
-  if (entry.fields.slug) {
-    entry.fields.slug[currLocale] = frontMatter['slug'];
-  } else {
-    entry.fields.slug = {
-      [currLocale]: frontMatter['slug']
-    };
-  }
+  entry.fields.slug[currLocale] = frontMatter['slug'];
   let updated = await entry.update();
   await updated.publish();
 }
@@ -322,9 +308,12 @@ const createPageEntryAndPublish = async (path, frontMatter, body, refId, environ
 
 // primary function to create, update, entries
 const publishPages = async () => {
+  // set up log
+  logger['pages'] = {};
+  const log = logger['pages'];
+  
   const fileContentStore = await getFileContent();
   const fPaths = Object.keys(fileContentStore);
-  const log = {};
   
   // process each file
   for (const path of fPaths) {
@@ -359,9 +348,6 @@ const publishPages = async () => {
       log[path] = 'This file had no content, so the file may have been deleted. No action taken';
     }
   }
-  // TODO return this output to Github action
-  console.log('===LOG OUTPUT START====\n', log);
-  console.log('===LOG OUTPUT END======');
 }
 
 // adds new tags if necessary
@@ -383,11 +369,13 @@ const updateTags = async () => {
 
 const publish = async () => {
   try {
-    // await updateTags();
-    // await publishPages();
+    await updateTags();
+    await publishPages();
     await publishCollections();
   } catch (error) {
     console.log('Error processing request', error);
+  } finally {
+    console.log(logger);
   }
 }
 
