@@ -101,6 +101,9 @@ const formatCollection = (order, content) => {
       },
       pages: {
         "en-US": pageLinks,
+      },
+      slug: {
+        "en-US": content['url'] ?? ""
       }
     },
     metadata: {
@@ -117,6 +120,9 @@ const formatCollection = (order, content) => {
 
 const updateCollectionAndPublish = async (entry, order, collectionContent) => {
   entry.fields.title = collectionContent['title'];
+  entry.fields.slug = {
+    "en-US": collectionContent['url'] ?? ""
+  }
   entry.fields.order = {
     "en-US": order.toString(),
   };
@@ -162,6 +168,14 @@ const publishCollections = async () => {
 
   // update Page entry orders based on content
   // get all entries of type page where the tag is bolt-js
+  try {
+    const pages = await environ.getEntries({
+      "content_type": "page"
+    });
+    console.log(pages)
+  } catch (error) {
+    console.log (error)
+  }
   // get an array order of slugs
 }
 
