@@ -83,7 +83,7 @@ const getPageLinks = (content) => {
       sys: {
         type: "Link",
         linkType: "Entry",
-        id: formatRefId(slug)
+        id: formatRefId(slug, 'page')
       }
     }
   })
