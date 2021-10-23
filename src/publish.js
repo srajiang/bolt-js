@@ -95,8 +95,9 @@ const formatCollection = (order, content) => {
   return {
     fields: {
       title: content['title'],
+      // TODO: Correct CMS field to accept symbols not strings
       order: {
-        "en-US": order,
+        "en-US": order.toString(),
       },
       pages: {
         "en-US": pageLinks,
