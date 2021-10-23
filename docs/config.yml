@@ -7,10 +7,14 @@ getting-started:
   title:
     en-US: Getting started
     ja-JP: Bolt 入門ガイド
+  slugs: 
+    - getting-started
 reference:
   title:
     en-US: Reference
     ja-JP: リファレンス
+  slugs: 
+    - reference
 basic: 
   title:
     en-US: Basic concepts

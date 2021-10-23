@@ -210,7 +210,7 @@ const formatPage = (path, frontMatter, body) => {
           [currLocale]: body
         },
         slug: {
-          [currLocale]: frontMatter['slug']
+          "en-US": frontMatter['slug']
         },
         sha: {
           "en-US": process.env.SHA
@@ -283,7 +283,6 @@ const updatePageAndPublish = async (page, frontMatter, body, path) => {
   page.fields.author[currLocale] = [process.env.AUTHOR];
   page.fields.markdown[currLocale] = body;
   page.fields.source[currLocale] = `https://github.com/${process.env.REPOSITORY}/blob/main/${path}`;
-  page.fields.slug[currLocale] = frontMatter['slug'];
   let updated = await page.update();
   await updated.publish();
 }
