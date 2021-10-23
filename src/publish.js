@@ -102,7 +102,7 @@ const formatCollection = (order, content) => {
       pages: {
         "en-US": pageLinks,
       },
-      slug: {
+      url: {
         "en-US": content['url'] ?? ""
       }
     },
@@ -120,7 +120,7 @@ const formatCollection = (order, content) => {
 
 const updateCollectionAndPublish = async (entry, order, collectionContent) => {
   entry.fields.title = collectionContent['title'];
-  entry.fields.slug = {
+  entry.fields.url = {
     "en-US": collectionContent['url'] ?? ""
   }
   entry.fields.order = {
