@@ -127,7 +127,7 @@ const updateCollectionAndPublish = async (entry, order, collectionContent) => {
 const publishCollections = async () => {
   // set up log
   logger['collections'] = {};
-  log = logger['collections'];
+  const log = logger['collections'];
 
   // TODO: Path to config should be passed in from Git Action
   const config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
