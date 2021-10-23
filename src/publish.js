@@ -116,11 +116,13 @@ const formatCollection = (order, content) => {
 }
 
 const updateCollectionAndPublish = async (entry, order, collectionContent) => {
-  entry.fields.title = collectionContent;
+  entry.fields.title = collectionContent['title'];
   entry.fields.order = {
     "en-US": order.toString(),
-    "ja-JP": order.toString(), 
   };
+  entry.fields.pages = {
+    "en-US": getPageLinks(collectionContent),
+  }
   const updated = await entry.update();
   await updated.publish();
 }
