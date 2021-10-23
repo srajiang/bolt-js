@@ -147,13 +147,13 @@ const publishCollections = async () => {
     try {
       const currCollection = await environ.getEntry(refId);
       await updateCollectionAndPublish(currCollection, order, content);
-      log[collectId] = `Collection entry updated: ${collection.sys.id}`;
+      log[collectId] = `Collection entry updated: ${currCollection.sys.id}`;
     } catch (err) {
       if (err.name === "NotFound") {
         const formatted = formatCollection(order, content);
         const newCollection = await environ.createEntryWithId('collection', refId, formatted);
         await newCollection.publish();
-        log[collectId] = `Collection entry created: ${collection.sys.id}`;
+        log[collectId] = `Collection entry created: ${newCollection.sys.id}`;
       } else {
         log[collectId] = err;
       }
