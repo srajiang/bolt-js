@@ -159,6 +159,7 @@ const publishCollections = async () => {
 
   // update Page entry orders based on content
   // get all entries of type page where the tag is bolt-js
+  // get an array order of slugs
 }
 
 // generates a reference id that corresponds to Contentful entry id
@@ -210,9 +211,6 @@ const formatPage = (path, frontMatter, body) => {
         },
         slug: {
           [currLocale]: frontMatter['slug']
-        },
-        uuid: {
-          [currLocale]: frontMatter['uuid']
         },
         sha: {
           "en-US": process.env.SHA
