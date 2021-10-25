@@ -14,7 +14,6 @@ reference:
     en-US: Reference
     ja-JP: リファレンス
   slugs: 
-    - reference
 basic: 
   title:
     en-US: Basic concepts

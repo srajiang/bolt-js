@@ -429,17 +429,12 @@ publish();
 /* 
 
 October Sprint
-- Fix regex that strips front matter
-- Add Page links to Collections
-- Add commit SHA as unique identifier for Pages + Collections
-- Correct order field in Pages + Collections to number and make the source
+- Fix regex that strips front matter ✅
+- Add Page links to Collections ✅
+- Add commit SHA as unique identifier for Pages ✅
+- Correct order field in Pages + Collections to number and make the source ✅ 
+- add config.yml validation
 
-Debrief Items
-- Github Actions Publish + convert repos into consumer repos
-- Handling asset upload to contentful (haven't dealt with this yet)
-- Handling module subreference - Python
-- Make logging better with summary stats for easy review and coded errors
-- Tests!
 
 Docs
 - All docs are required to have frontmatter: at least lang, title, slug (must be unique) in the proper format ✅
