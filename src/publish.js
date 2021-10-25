@@ -95,7 +95,7 @@ const formatCollection = (order, content) => {
   return {
     fields: {
       title: content['title'],
-      // TODO: Correct CMS field to accept symbols not strings
+      // TODO: CMS field to accept symbols not strings
       order: {
         "en-US": order.toString(),
       },
@@ -143,12 +143,12 @@ const publishCollections = async () => {
   const collections = Object.keys(config);
   const space = await client.getSpace(spaceId);
   const environ = await space.getEnvironment(envId);
+  const content = config[collectId];
   
   // update or create collections
   for (let i = 0; i < collections.length; i++) {
     const order = i;
     const collectId = collections[i];
-    const content = config[collectId];
     const refId = formatRefId(collections[i], 'collection');
     try {
       const currCollection = await environ.getEntry(refId);
@@ -165,21 +165,39 @@ const publishCollections = async () => {
       }
     }
   }
+  // set up logger
+  logger['collections']['pageOrder'] = {};
+  const pageLog = logger['collections']['pageOrder'];
+  
+  // update Page entry orders based on collections content
+  const pages = await environ.getEntries({
+    "content_type": "page",
+    "metadata.tags.sys.id[all]": getSourceTag(),
+  });
+  console.log('all pages here', pages);
 
-  // update Page entry orders based on content
-  // get all entries of type page where the tag is bolt-js
-  try {
-    const pages = await environ.getEntries({
-      "content_type": "page"
-    });
-    console.log(pages)
-  } catch (error) {
-    console.log (error)
-  }
   // get an array order of slugs
+  let orderedSlugs = [];
+  collections.map(collectId => {
+    const collectSlugs = config[collectId]['slugs'];
+    if (collectSlugs) {
+      orderedSlugs = orderedSlugs.concat(collectSlugs);
+    }
+  })
+  // update Page entry order field
+  for (let order = 0; order < orderedSlugs.length; order++) {
+    let pageEntryId = formatRefId(orderedSlugs[order]);
+    try {
+    const page = await environ.getEntry(pageEntryId);
+      await setPageOrderAndPublish(page, order);
+      pageLog[pageEntryId] = `${page.sys.id} order updated`;
+    } catch (error) {
+      pageLog[pageEntryId] = error;
+    }
+  }
 }
 
-// generates a reference id that corresponds to Contentful entry id
+// generates reference id that corresponds to Contentful entry id
 const formatRefId = (id, entryType) => {
   let refId;
   /**
@@ -304,11 +322,12 @@ const updatePageAndPublish = async (page, frontMatter, body, path) => {
   await updated.publish();
 }
 
-const setPageOrderAndPublish = async (page, order) => {
-  page.fields.order = {
+// accepts an instance of Page (entry and updates its order)
+const setPageOrderAndPublish = async (pageEntry, order) => {
+  pageEntry.fields.order = {
     "en-US": order
   }
-  let updated = await page.update();
+  let updated = await pageEntry.update();
   await updated.publish();
 }
 
