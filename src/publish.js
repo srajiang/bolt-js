@@ -133,23 +133,39 @@ const updateCollectionAndPublish = async (entry, order, collectionContent) => {
   await updated.publish();
 }
 
+// ensures each file has a title field, and a slugs field with at least one entry
+const validateConfig = (config) => {
+    const entries = Object.entries(config);
+    for (let obj of entries) {
+      // each entry must have at least one slug
+      // each entry must have a title field
+      if (obj[1]['title'] === undefined || !obj[1]['slugs'] || obj[1]['slugs'].length < 1) {
+        throw new Error('Invalid config: All entries must have a title field and at least one slug associated');
+      }
+    }
+}
+
 const publishCollections = async () => {
+  // TODO: Path to config should be passed in from Git Action
+  const config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
+  
+  // validate config
+  validateConfig(config);
+
   // set up log
   logger['collections'] = {};
   const log = logger['collections'];
 
-  // TODO: Path to config should be passed in from Git Action
-  const config = yaml.load(fs.readFileSync('docs/config.yml', 'utf8')); 
-  const collections = Object.keys(config);
+  const collectionIds = Object.keys(config);
   const space = await client.getSpace(spaceId);
   const environ = await space.getEnvironment(envId);
   const content = config[collectId];
   
-  // update or create collections
-  for (let i = 0; i < collections.length; i++) {
+  // update or create Collections
+  for (let i = 0; i < collectionIds.length; i++) {
     const order = i;
-    const collectId = collections[i];
-    const refId = formatRefId(collections[i], 'collection');
+    const collectId = collectionIds[i];
+    const refId = formatRefId(collectionIds[i], 'collection');
     try {
       const currCollection = await environ.getEntry(refId);
       await updateCollectionAndPublish(currCollection, order, content);
@@ -178,11 +194,9 @@ const publishCollections = async () => {
 
   // get an array order of slugs
   let orderedSlugs = [];
-  collections.map(collectId => {
+  collections.forEach(collectId => {
     const collectSlugs = config[collectId]['slugs'];
-    if (collectSlugs) {
-      orderedSlugs = orderedSlugs.concat(collectSlugs);
-    }
+    orderedSlugs = orderedSlugs.concat(collectSlugs);
   })
   // update Page entry order field
   for (let order = 0; order < orderedSlugs.length; order++) {
