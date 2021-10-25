@@ -185,12 +185,12 @@ const publishCollections = async () => {
   logger['collections']['pageOrder'] = {};
   const pageLog = logger['collections']['pageOrder'];
   
+  // TODO: Could remove this
   // update Page entry orders based on collections content
   const pages = await environ.getEntries({
     "content_type": "page",
     "metadata.tags.sys.id[all]": getSourceTag(),
   });
-  console.log('all pages here', pages);
 
   // get an array order of slugs
   let orderedSlugs = [];
@@ -293,7 +293,7 @@ const parse = (data) => {
     }
   }
   // strip out front matter from rest of body
-  const match = /---[^-]+---/s.exec(data);
+  const match = /^---.*?---/s.exec(data);
   const body = match ? data.slice(match.index + match[0].length) : null;
   return {
     frontMatter,
