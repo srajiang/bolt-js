@@ -97,7 +97,7 @@ const formatCollection = (order, content) => {
       title: content['title'],
       // TODO: CMS field to accept symbols not strings
       order: {
-        "en-US": order.toString(),
+        "en-US": order,
       },
       pages: {
         "en-US": pageLinks,
@@ -124,7 +124,7 @@ const updateCollectionAndPublish = async (entry, order, collectionContent) => {
     "en-US": collectionContent['url'] ?? ""
   }
   entry.fields.order = {
-    "en-US": order.toString(),
+    "en-US": order,
   };
   entry.fields.pages = {
     "en-US": getPageLinks(collectionContent),
@@ -338,9 +338,8 @@ const updatePageAndPublish = async (page, frontMatter, body, path) => {
 
 // accepts an instance of Page (entry and updates its order)
 const setPageOrderAndPublish = async (pageEntry, order) => {
-  // TODO: Replace with integer
   pageEntry.fields.order = {
-    "en-US": order.toString()
+    "en-US": order
   }
   let updated = await pageEntry.update();
   await updated.publish();
