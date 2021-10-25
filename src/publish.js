@@ -194,7 +194,7 @@ const publishCollections = async () => {
 
   // get an array order of slugs
   let orderedSlugs = [];
-  collectionIds.forEach(collectId => {
+  collection.forEach(collectId => {
     const collectSlugs = config[collectId]['slugs'];
     orderedSlugs = orderedSlugs.concat(collectSlugs);
   })
@@ -293,7 +293,7 @@ const parse = (data) => {
     }
   }
   // strip out front matter from rest of body
-  const match = /---.+---/gs.exec(data);
+  const match = /---[^-]+---/s.exec(data);
   const body = match ? data.slice(match.index + match[0].length) : null;
   return {
     frontMatter,
