@@ -63,7 +63,7 @@ const hasFrontMatter = (lexed) => {
 }
 
 // checks for required fields and returns missing
-const getMissingFields = (frontMatter) => {
+const getMissingFrontMatterFields = (frontMatter) => {
   let required = ['slug', 'title', 'lang'];
   return required.filter(field => {
     return (frontMatter[field] === undefined || frontMatter[field] === '');
@@ -184,13 +184,6 @@ const publishCollections = async () => {
   // set up logger
   logger['collections']['pageOrder'] = {};
   const pageLog = logger['collections']['pageOrder'];
-  
-  // TODO: Could remove this
-  // update Page entry orders based on collections content
-  const pages = await environ.getEntries({
-    "content_type": "page",
-    "metadata.tags.sys.id[all]": getSourceTag(),
-  });
 
   // get an array order of slugs
   let orderedSlugs = [];
@@ -313,7 +306,7 @@ const TYPES = Object.freeze({
 // validate required fields
 const validateFrontMatter = (frontMatter) => {
   // all required fields exist
-  let missing = getMissingFields(frontMatter);
+  let missing = getMissingFrontMatterFields(frontMatter);
   if (missing.length > 0) {
     throw new Error(`Missing required field(s) ${missing}`);
   }

@@ -2,7 +2,7 @@
 # For more information, see our main DevTools docs migration project @
 # https://paper.dropbox.com/doc/DevTools-docs-migration--BMeZ~P1MCa~mn~mlMIED371eAg-iSKF6HsbGzWnUJyZm3QPk
 
-name: Publish to CMS
+name: Publish docs to Contentful
 
 # workflow triggers
 on:
