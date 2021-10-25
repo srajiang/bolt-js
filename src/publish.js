@@ -159,12 +159,12 @@ const publishCollections = async () => {
   const collectionIds = Object.keys(config);
   const space = await client.getSpace(spaceId);
   const environ = await space.getEnvironment(envId);
-  const content = config[collectId];
   
   // update or create Collections
   for (let i = 0; i < collectionIds.length; i++) {
     const order = i;
     const collectId = collectionIds[i];
+    const content = config[collectId];
     const refId = formatRefId(collectionIds[i], 'collection');
     try {
       const currCollection = await environ.getEntry(refId);
