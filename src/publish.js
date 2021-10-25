@@ -338,8 +338,9 @@ const updatePageAndPublish = async (page, frontMatter, body, path) => {
 
 // accepts an instance of Page (entry and updates its order)
 const setPageOrderAndPublish = async (pageEntry, order) => {
+  // TODO: Replace with integer
   pageEntry.fields.order = {
-    "en-US": order
+    "en-US": order.toString()
   }
   let updated = await pageEntry.update();
   await updated.publish();
