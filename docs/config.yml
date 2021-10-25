@@ -14,6 +14,7 @@ reference:
     en-US: Reference
     ja-JP: リファレンス
   slugs: 
+    - reference
 basic: 
   title:
     en-US: Basic concepts
@@ -63,10 +64,6 @@ advanced:
     - custom-routes
   url: concepts
 deployments:
-  title:
-    en-US: Deployments
-    # TODO: translate
-    ja-JP: Deployments
   slugs:
     - aws-lambda
     - heroku
