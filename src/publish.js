@@ -200,7 +200,7 @@ const publishCollections = async () => {
   })
   // update Page entry order field
   for (let order = 0; order < orderedSlugs.length; order++) {
-    let pageEntryId = formatRefId(orderedSlugs[order]);
+    let pageEntryId = formatRefId(orderedSlugs[order], 'page');
     try {
     const page = await environ.getEntry(pageEntryId);
       await setPageOrderAndPublish(page, order);
