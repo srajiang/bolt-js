@@ -426,29 +426,3 @@ const publish = async () => {
 }
 
 publish();
-/* 
-
-October Sprint
-- Fix regex that strips front matter ✅
-- Add Page links to Collections ✅
-- Add commit SHA as unique identifier for Pages ✅
-- Correct order field in Pages + Collections to number and make the source ✅ 
-- add config.yml validation
-
-
-Docs
-- All docs are required to have frontmatter: at least lang, title, slug (must be unique) in the proper format ✅
-- Order is not required ❗
-- Slugs
-  - Add validation on slugs - Slugs should use - not _ e.g. listening-messages ❗
-  - Slugs must be unique (excepting localized versions. These must always match in order) 
-    for articles in other languages to be associated properly). 
-  - Once a slug has been established, it should not be updated. Updating a slug will break links
-  - Slugs should also serve as the unique reference for the entry 
-- Making a change
-  - Changing the name of a article, - update the title field (should match the filename)
-  
-- Notes 
-    - If there are documentations to add in different supported languages, the supported languages need to be updated in the map. 
-  - 
-*/
