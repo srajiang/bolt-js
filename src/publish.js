@@ -194,7 +194,7 @@ const publishCollections = async () => {
 
   // get an array order of slugs
   let orderedSlugs = [];
-  collections.forEach(collectId => {
+  collectionIds.forEach(collectId => {
     const collectSlugs = config[collectId]['slugs'];
     orderedSlugs = orderedSlugs.concat(collectSlugs);
   })
